@@ -1,0 +1,3808 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warehouse Performance App</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f2f4f7;
+    margin: 0;
+    padding: 15px;
+    color: #222;
+}
+.container { max-width: 1000px; margin: auto; }
+h1,h2,h3 { color: #183153; }
+.section {
+    background: white;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+}
+input,select,button {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px;
+    margin: 5px 0 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 16px;
+}
+button {
+    background: #1769aa;
+    color: white;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+}
+button:active { opacity: 0.8; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.danger { background: #c62828; }
+.secondary { background: #555; }
+.success { background: #16833b; }
+.edit-button {
+    background: #16833b;
+    min-width: 65px;
+    padding: 8px;
+    margin: 2px;
+}
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(135px,1fr));
+    gap: 10px;
+}
+.stat {
+    background: #eaf2f8;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+}
+.stat strong {
+    display: block;
+    font-size: 22px;
+    margin-top: 5px;
+    color: #183153;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 650px;
+}
+th,td {
+    padding: 9px;
+    border-bottom: 1px solid #ddd;
+    text-align: center;
+}
+th { background: #183153; color: white; }
+.table-wrap { overflow-x: auto; }
+.good { color: #16833b; font-weight: bold; }
+.bad { color: #c62828; font-weight: bold; }
+.average { color: #666; font-weight: bold; }
+.rating-guide p { margin: 7px 0; }
+.admin-box,.loading-box {
+    background: #f5f5f5;
+    padding: 12px;
+    border-radius: 8px;
+}
+.hidden { display: none; }
+.small { font-size: 13px; color: #666; }
+.loading-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+    gap: 12px;
+}
+.loading-box h3 { margin-top: 5px; }
+
+.timer-box {
+    background: #eaf2f8;
+    padding: 18px;
+    border-radius: 10px;
+    text-align: center;
+    margin-top: 12px;
+}
+.timer-display {
+    font-size: 42px;
+    font-weight: bold;
+    color: #183153;
+    margin: 15px 0;
+    font-variant-numeric: tabular-nums;
+}
+.timer-status {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+.staff-item {
+    background: white;
+    padding: 10px;
+    margin: 7px 0;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+.staff-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+  .app-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.app-tabs button {
+    padding: 13px 6px;
+    border: none;
+    border-radius: 8px;
+    background: #e2e8f0;
+    color: #222;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.app-tabs button.active {
+    background: #2563eb;
+    color: white;
+}
+</style>
+</head>
+
+<body>
+
+<div id="loginScreen" style="max-width:450px;margin:60px auto;padding:25px;background:white;border-radius:12px;">
+
+<h2>Warehouse Performance</h2>
+<p>Please sign in to continue.</p>
+
+<label>Email Address</label>
+<input type="email" id="loginEmail" placeholder="Enter email">
+
+<label>Password</label>
+<input type="password" id="loginPassword" placeholder="Enter password">
+
+<button onclick="loginUser()">Sign In</button>
+
+<p id="loginMessage" class="small"></p>
+
+<button class="secondary" onclick="logoutUser()" id="logoutButton" style="display:none;">
+Sign Out
+</button>
+
+</div>
+
+<div class="container" id="mainApp" style="display:none;">
+  <div class="app-tabs">
+    <button type="button" onclick="showAppTab('dashboard')">Dashboard</button>
+    <button type="button" onclick="showAppTab('picking')">Picking</button>
+    <button type="button" onclick="showAppTab('loading')">Loading</button>
+    <button type="button" onclick="showAppTab('routes')">Route Performance</button>
+    <button type="button" onclick="showAppTab('records')">Records</button>
+    <button type="button" onclick="showAppTab('admin')">Admin</button>
+    <button type="button" onclick="showAppTab('forecast')">Shift Forecast</button>
+    <button type="button" onclick="showAppTab('history')">Shift History</button>
+
+</div>
+  <div style="text-align:right;margin-bottom:15px;">
+    <button onclick="logoutUser()" style="background:#555;color:white;padding:10px 18px;border:none;border-radius:6px;">
+        Log Out
+    </button>
+</div>
+
+<h1>Warehouse Performance Dashboard</h1>
+
+<div class="section">
+<h2>Add Picker Record</h2>
+
+<label>Date</label>
+<input type="date" id="entryDate">
+
+<label>Picker Name</label>
+<select id="pickerName">
+    <option value="">Select a picker</option>
+</select>
+
+<label>Picking Store</label>
+<select id="building">
+<option value="Freezer">Freezer</option>
+<option value="Ambient">Ambient</option>
+<option value="Chiller">Chiller</option>
+</select>
+
+<label>Number of Routes</label>
+<input type="number" id="routes" min="1" step="1">
+
+<label>Total Units Picked</label>
+<input type="number" id="units" min="1" step="1">
+
+<label>Total Picking Time (minutes)</label>
+<input type="number" id="minutes" min="1" step="1">
+
+<button onclick="addPicker()">Add Picker Record</button>
+</div>
+
+<div class="section">
+<h2>Individual Route Loading Timer</h2>
+
+<p class="small">
+Time each van route separately. Only one route can be timed at a time.
+</p>
+
+<label>Loading Date</label>
+<input type="date" id="routeDate">
+
+<label>Loading Area</label>
+<select id="routeArea">
+<option value="Frozen">Frozen</option>
+<option value="Ambient">Ambient</option>
+</select>
+
+<label>Three-Digit Route Number</label>
+<input type="number" id="routeNumber"
+placeholder="e.g. 125" inputmode="numeric"
+min="100" max="999" step="1">
+
+<label>Number of Loaders</label>
+<input type="number" id="routeLoaders"
+placeholder="e.g. 3" min="1" step="1">
+
+<div class="timer-box">
+<div class="timer-status" id="timerStatus">Ready to start</div>
+<div class="timer-display" id="timerDisplay">00:00:00</div>
+
+<button class="success" id="startRouteButton"
+onclick="startRouteTimer()">START LOADING</button>
+
+<button class="danger hidden" id="finishRouteButton"
+onclick="finishRouteTimer()">FINISH LOADING</button>
+</div>
+
+<p class="small" id="activeRouteDetails">
+No route currently being timed.
+</p>
+
+<p class="small">
+The timer continues accurately if you close and reopen the app.
+</p>
+</div>
+
+<div class="section">
+<h2>Van Weight & Units</h2>
+
+<p class="small">
+Enter the figures from the warehouse computer at the end of the shift. This does not affect the loading timer.
+</p>
+
+<label>Shift Date</label>
+<input type="date" id="vanDetailsDate">
+
+<label>Loading Area</label>
+<select id="vanDetailsArea">
+<option value="Frozen">Frozen</option>
+<option value="Ambient">Ambient</option>
+</select>
+
+<label>Three-Digit Route Number</label>
+<input type="number" id="vanDetailsRoute"
+placeholder="e.g. 125" min="100" max="999" step="1">
+
+<label>Total Weight (kg)</label>
+<input type="number" id="vanDetailsWeight"
+placeholder="e.g. 2450" min="1" step="0.01">
+
+<label>Total Units</label>
+<input type="number" id="vanDetailsUnits"
+placeholder="e.g. 280" min="1" step="1">
+
+<button class="success" onclick="addVanDetails()">
+Save Van Details
+</button>
+
+<h3>Saved Van Details</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Area</th>
+<th>Loaders</th>
+<th>Vans</th>
+<th>Minutes</th>
+<th>Mins/Van</th>
+<th>Vans/Hour</th>
+<th id="loadingDeleteHeading" class="hidden">Actions</th>
+</tr>
+</thead>
+<tbody id="vanDetailsResults"></tbody>
+</table>
+</div>
+
+</div>
+
+<div class="section">
+<h2>Van Loading Records</h2>
+<p class="small">Enter Frozen and Ambient loading separately. Record actual loading minutes, excluding breaks.</p>
+
+<label>Loading Date</label>
+<input type="date" id="loadingDate">
+
+<div class="loading-grid">
+
+<div class="loading-box">
+<h3>Frozen Loading</h3>
+
+<label>Number of Loaders</label>
+<input type="number" id="frozenLoaders" min="1" step="1" placeholder="e.g. 4">
+
+<label>Number of Vans Loaded</label>
+<input type="number" id="frozenVans" min="1" step="1" placeholder="e.g. 20">
+
+<label>Total Loading Time (minutes)</label>
+<input type="number" id="frozenMinutes" min="1" step="1" placeholder="e.g. 120">
+
+<button onclick="addLoading('Frozen')">Save Frozen Loading</button>
+</div>
+
+<div class="loading-box">
+<h3>Ambient Loading</h3>
+
+<label>Number of Loaders</label>
+<input type="number" id="ambientLoaders" min="1" step="1" placeholder="e.g. 5">
+
+<label>Number of Vans Loaded</label>
+<input type="number" id="ambientVans" min="1" step="1" placeholder="e.g. 25">
+
+<label>Total Loading Time (minutes)</label>
+<input type="number" id="ambientMinutes" min="1" step="1" placeholder="e.g. 150">
+
+<button onclick="addLoading('Ambient')">Save Ambient Loading</button>
+</div>
+
+</div>
+</div>
+
+<div class="section hidden">
+    <h2>Shift Planner Forecast</h2>
+    <p class="small">Plan workload, staffing and expected shift completion.</p>
+
+    <h3>Shift Details</h3>
+    <label>Shift Date</label>
+    <input type="date" id="forecastDate">
+
+    <label>Shift Start Time</label>
+    <input type="time" id="forecastStart" value="22:15">
+
+    <label>Target Finish Time</label>
+    <input type="time" id="forecastFinish" value="06:00">
+  <label>Planned Loading Start Time</label>
+<input type="time" id="forecastLoadingStart" value="23:45">
+  <h3>Team Break</h3>
+
+<label>Break Start Time</label>
+<input type="time" id="forecastBreakStart" value="03:00">
+
+<label>Break Duration</label>
+<select id="forecastBreakDuration">
+    <option value="30">30 minutes</option>
+    <option value="45" selected>45 minutes</option>
+    <option value="60">60 minutes</option>
+</select>
+
+    <h3>Expected Workload</h3>
+    <label>Expected Routes</label>
+    <input type="number" id="forecastRoutes" min="0" value="0">
+
+    <label>Average Units Per Route</label>
+    <input type="number" id="forecastUnitsPerRoute" min="0" value="0">
+
+    <p class="small">The app will estimate the Freezer, Ambient and Chiller split using your previous picking records.</p>
+
+    <h3>Picking Staff</h3>
+    <div class="loading-grid">
+        <div class="loading-box">
+            <h3>Freezer</h3>
+            <label>Available Pickers</label>
+            <input type="number" id="forecastFreezerPickers" min="0" value="0">
+        </div>
+        <div class="loading-box">
+            <h3>Ambient</h3>
+            <label>Available Pickers</label>
+            <input type="number" id="forecastAmbientPickers" min="0" value="0">
+        </div>
+        <div class="loading-box">
+            <h3>Chiller</h3>
+            <label>Available Pickers</label>
+            <input type="number" id="forecastChillerPickers" min="0" value="1">
+        </div>
+    </div>
+
+    <h3>Loading Staff</h3>
+    <div class="loading-grid">
+        <div class="loading-box">
+            <h3>Freezer Loading</h3>
+            <label>Loaders Available at Start</label>
+            <input type="number" id="forecastFreezerLoaders" min="0" value="0">
+        </div>
+        <div class="loading-box">
+            <h3>Ambient Loading</h3>
+            <label>Loaders Available at Start</label>
+            <input type="number" id="forecastAmbientLoaders" min="0" value="0">
+        </div>
+    </div>
+
+    <h3>Additional Staff Joining Loading</h3>
+    <p class="small">Add people who finish other duties and join loading later.</p>
+
+    <div class="loading-box">
+        <h3>Additional Group 1</h3>
+        <label>Number of Staff</label>
+        <input type="number" id="forecastExtraCount1" min="0" value="0">
+        <label>Loading Team</label>
+        <select id="forecastExtraArea1">
+            <option value="Ambient">Ambient</option>
+            <option value="Freezer">Freezer</option>
+        </select>
+        <label>Available From</label>
+        <input type="time" id="forecastExtraTime1" value="23:00">
+    </div>
+
+    <div class="loading-box">
+        <h3>Additional Group 2</h3>
+        <label>Number of Staff</label>
+        <input type="number" id="forecastExtraCount2" min="0" value="0">
+        <label>Loading Team</label>
+        <select id="forecastExtraArea2">
+            <option value="Ambient">Ambient</option>
+            <option value="Freezer">Freezer</option>
+        </select>
+        <label>Available From</label>
+        <input type="time" id="forecastExtraTime2" value="00:00">
+    </div>
+
+    <div class="loading-box">
+        <h3>Additional Group 3</h3>
+        <label>Number of Staff</label>
+        <input type="number" id="forecastExtraCount3" min="0" value="0">
+        <label>Loading Team</label>
+        <select id="forecastExtraArea3">
+            <option value="Ambient">Ambient</option>
+            <option value="Freezer">Freezer</option>
+        </select>
+        <label>Available From</label>
+        <input type="time" id="forecastExtraTime3" value="01:00">
+    </div>
+
+    <button class="success" onclick="calculateShiftForecast()">Calculate Shift Forecast</button>
+
+    <div id="forecastResults" class="hidden">
+        <h3>Picking Forecast</h3>
+        <div id="forecastBreakResults"></div>
+
+<div id="forecastPickingResults"></div>
+        <h3>Loading Forecast</h3>
+        <div id="forecastLoadingResults"></div>
+        <h3>Shift Completion</h3>
+        <div class="stat">
+            Projected Finish
+            <strong id="forecastCompletion">-</strong>
+        </div>
+        <p id="forecastSummary"></p>
+    </div>
+</div>
+  
+<div class="section hidden">
+    <h2>Shift History</h2>
+
+    <p class="small">
+        Record the actual results of each completed shift.
+    </p>
+
+    <h3>Record Completed Shift</h3>
+
+    <label>Shift Date</label>
+    <input type="date" id="historyDate">
+
+    <label>Total Routes Completed</label>
+    <input type="number" id="historyRoutes" min="0" step="1" placeholder="e.g. 40">
+
+    <label>Total Weight Handled (kg)</label>
+    <input type="number" id="historyWeight" min="0" step="0.01" placeholder="e.g. 85000">
+
+    <label>Planned Staff</label>
+    <input type="number" id="historyPlannedStaff" min="0" step="1" placeholder="e.g. 25">
+
+    <label>Actual Staff</label>
+    <input type="number" id="historyActualStaff" min="0" step="1" placeholder="e.g. 22">
+
+    <label>Break Start Time</label>
+    <input type="time" id="historyBreakStart">
+
+    <label>Break Duration</label>
+    <select id="historyBreakDuration">
+        <option value="30">30 minutes</option>
+        <option value="45" selected>45 minutes</option>
+        <option value="60">60 minutes</option>
+    </select>
+
+    <label>Planned Finish Time</label>
+    <input type="time" id="historyPlannedFinish" value="06:00">
+
+    <label>Actual Finish Time</label>
+    <input type="time" id="historyActualFinish">
+
+    <button class="success" onclick="addShiftHistory()">
+        Save Shift History
+    </button>
+
+    <h3>Previous Shifts</h3>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Routes</th>
+                    <th>Weight (kg)</th>
+                    <th>Planned Staff</th>
+                    <th>Actual Staff</th>
+                    <th>Break</th>
+                    <th>Planned Finish</th>
+                    <th>Actual Finish</th>
+                    <th id="historyActionsHeading" class="hidden">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="shiftHistoryResults"></tbody>
+        </table>
+    </div>
+</div>
+
+
+<div class="section">
+<h2>Report Period</h2>
+
+<label>Select Report</label>
+<select id="period" onchange="renderEntries()">
+<option value="daily">Daily</option>
+<option value="weekly">Weekly</option>
+<option value="monthly">Monthly</option>
+</select>
+
+<label>Select Date</label>
+<input type="date" id="filterDate" onchange="renderEntries()">
+
+<p id="periodDescription"></p>
+</div>
+
+<div class="section">
+<h2>Overall Picking Dashboard</h2>
+
+<div class="cards">
+<div class="stat">Picker Entries<strong id="totalEntries">0</strong></div>
+<div class="stat">Total Routes<strong id="totalRoutes">0</strong></div>
+<div class="stat">Total Units<strong id="totalUnits">0</strong></div>
+<div class="stat">Overall Units/Hour<strong id="overallRate">0</strong></div>
+<div class="stat">Top Freezer Picker<strong id="topFreezerPicker">-</strong></div>
+<div class="stat">Top Ambient Picker<strong id="topAmbientPicker">-</strong></div>
+<div class="stat">Top Chiller Picker<strong id="topChillerPicker">-</strong></div>
+</div>
+</div>
+
+<div class="section">
+<h2>Store Performance Comparison</h2>
+
+<div class="cards">
+<div class="stat">Freezer Average<strong id="freezerAverage">0</strong>Units/hour</div>
+<div class="stat">Ambient Average<strong id="ambientAverage">0</strong>Units/hour</div>
+<div class="stat">Chiller Average<strong id="chillerAverage">0</strong>Units/hour</div>
+</div>
+
+<h3>Performance Rating Guide</h3>
+<div class="rating-guide">
+<p class="good">Excellent: 10% or more above store average</p>
+<p class="good">Above Average: 5% to 9.9% above average</p>
+<p class="average">Average: within 5% of average</p>
+<p class="bad">Below Average: 5% to 9.9% below average</p>
+<p class="bad">Needs Improvement: 10% or more below average</p>
+</div>
+</div>
+
+<div class="section">
+<h2>Freezer Leaderboard</h2>
+<div class="table-wrap">
+<table>
+<thead><tr>
+<th>Position</th><th>Picker</th><th>Units</th>
+<th>Units/Hour</th><th>Store Average</th>
+<th>Difference</th><th>Rating</th>
+</tr></thead>
+<tbody id="freezerLeaderboard"></tbody>
+</table>
+</div>
+</div>
+
+<div class="section">
+<h2>Ambient Leaderboard</h2>
+<div class="table-wrap">
+<table>
+<thead><tr>
+<th>Position</th><th>Picker</th><th>Units</th>
+<th>Units/Hour</th><th>Store Average</th>
+<th>Difference</th><th>Rating</th>
+</tr></thead>
+<tbody id="ambientLeaderboard"></tbody>
+</table>
+</div>
+</div>
+
+<div class="section">
+<h2>Chiller Leaderboard</h2>
+<div class="table-wrap">
+<table>
+<thead><tr>
+<th>Position</th><th>Picker</th><th>Units</th>
+<th>Units/Hour</th><th>Store Average</th>
+<th>Difference</th><th>Rating</th>
+</tr></thead>
+<tbody id="chillerLeaderboard"></tbody>
+</table>
+</div>
+</div>
+
+<div class="section">
+<h2>Van Loading Performance</h2>
+
+<div class="cards">
+<div class="stat">Frozen Vans<strong id="frozenTotalVans">0</strong></div>
+<div class="stat">Frozen Vans/Hour<strong id="frozenRate">0</strong></div>
+<div class="stat">Frozen Vans/Loader/Hour<strong id="frozenLoaderRate">0</strong></div>
+<div class="stat">Ambient Vans<strong id="ambientTotalVans">0</strong></div>
+<div class="stat">Ambient Vans/Hour<strong id="ambientRate">0</strong></div>
+<div class="stat">Ambient Vans/Loader/Hour<strong id="ambientLoaderRate">0</strong></div>
+</div>
+
+<p class="small">These figures use your manual Frozen and Ambient loading records.</p>
+</div>
+
+<div class="section">
+<h2>Individual Route Loading Results</h2>
+
+<div class="cards">
+<div class="stat">Completed Routes<strong id="routeTotalCount">0</strong></div>
+<div class="stat">Average Minutes/Route<strong id="routeAverageMinutes">0</strong></div>
+<div class="stat">Frozen Average<strong id="routeFrozenAverage">0</strong></div>
+<div class="stat">Ambient Average<strong id="routeAmbientAverage">0</strong></div>
+</div>
+
+<p class="small">These results use the individual route timer, not the manual loading records.</p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Route</th>
+<th>Area</th>
+<th>Loaders</th>
+<th>Started</th>
+<th>Finished</th>
+<th>Minutes</th>
+<th>Weight (kg)</th>
+<th>Units</th>
+<th>Minutes per 1,000 kg</th>
+<th id="routeDeleteHeading" class="hidden">Actions</th>
+</tr>
+</thead>
+<tbody id="routeLoadingResults"></tbody>
+</table>
+</div>
+</div>
+
+<div class="section">
+<h2>Loading Records</h2>
+<p class="small">Manual Frozen and Ambient records. Protected from editing and deletion unless Admin Mode is unlocked.</p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<th>Date</th><th>Area</th><th>Loaders</th>
+<th>Vans</th><th>Minutes</th>
+<th>Mins/Van</th><th>Vans/Hour</th>
+<th id="ading" class="hidden">Actions</th>
+</tr>
+</thead>
+<tbody id="loadingResults"></tbody>
+</table>
+</div>
+</div>
+
+<div class="section">
+<h2>Picker Results</h2>
+<p class="small">Records are protected from editing and deletion unless Admin Mode is unlocked.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr>
+<th>Date</th><th>Picker</th><th>Store</th><th>Routes</th>
+<th>Units</th><th>Minutes</th><th>Avg Mins/Route</th>
+<th>Avg Units/Route</th><th>Units/Hour</th>
+<th id="deleteHeading" class="hidden">Actions</th>
+</tr></thead>
+<tbody id="resultsTable"></tbody>
+</table>
+</div>
+</div>
+
+<div class="section">
+<h2>Admin Section</h2>
+
+<div class="admin-box">
+<p>Administrator access is controlled by your Firebase account.</p>
+
+<div id="adminUnlockedArea" class="hidden">
+<p class="good">Admin Mode Unlocked</p>
+
+<div class="admin-box">
+    <h3>Manage Staff</h3>
+
+    <label>New Staff Member</label>
+    <input type="text" id="newStaffName" placeholder="Enter employee name">
+
+    <button class="success" onclick="addStaff()">Add Staff Member</button>
+
+    <label>Existing Staff Members</label>
+  <p id="staffStatus">Checking Firebase for staff...</p>
+    <div id="staffList"></div>
+</div>
+
+<button class="danger" onclick="clearAllEntries()">Clear All Picker Records</button>
+<button class="danger" onclick="clearAllLoading()">Clear All Manual Loading Records</button>
+<button class="danger" onclick="clearAllRouteLoading()">Clear All Individual Route Records</button>
+<button class="secondary" onclick="lockAdmin()">Lock Admin Mode</button>
+</div>
+
+<p id="adminMessage" class="small"></p>
+</div>
+</div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/13.2.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/13.2.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore-compat.js"></script>
+
+<script>
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBok8DbXbdYFURCFgI-7m_iPPHTtlAdEcI",
+  authDomain: "nightshift-stats.firebaseapp.com",
+  projectId: "nightshift-stats",
+  storageBucket: "nightshift-stats.firebasestorage.app",
+  messagingSenderId: "1000668628206",
+  appId: "1:1000668628206:web:9fc460f5af85599d559fff",
+  measurementId: "G-HWWD17L99H"
+};
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+let adminUnlocked = false;
+let currentUser = null;
+
+const ADMIN_UID = "INfIWLQPeBPpPbhQW1DKnkJv3Wr2";
+
+
+let entries = [];
+console.log("LOCAL PICKER DATA:", localStorage.getItem("pickerEntries"));
+
+let loadingEntries = [];
+let routeLoadingEntries = [];
+let vanDetailsEntries = [];
+
+try {
+    vanDetailsEntries = JSON.parse(
+        localStorage.getItem("vanDetailsEntries")
+    ) || [];
+
+    if (!Array.isArray(vanDetailsEntries)) {
+        vanDetailsEntries = [];
+    }
+} catch (error) {
+    vanDetailsEntries = [];
+}
+
+let vanDetailsUnsubscribe = null;
+let activeRouteTimer = null;
+let timerInterval = null;
+
+// LOAD SAVED DATA
+
+try {
+    entries = JSON.parse(localStorage.getItem("pickerEntries")) || [];
+    if (!Array.isArray(entries)) entries = [];
+} catch (error) {
+    entries = [];
+}
+
+try {
+    loadingEntries = JSON.parse(localStorage.getItem("loadingEntries")) || [];
+    if (!Array.isArray(loadingEntries)) loadingEntries = [];
+} catch (error) {
+    loadingEntries = [];
+}
+
+try {
+    routeLoadingEntries = JSON.parse(
+        localStorage.getItem("routeLoadingEntries")
+    ) || [];
+    if (!Array.isArray(routeLoadingEntries)) routeLoadingEntries = [];
+} catch (error) {
+    routeLoadingEntries = [];
+}
+
+try {
+    activeRouteTimer = JSON.parse(
+        localStorage.getItem("activeRouteTimer")
+    ) || null;
+} catch (error) {
+    activeRouteTimer = null;
+}
+
+// FIRESTORE STAFF LIST
+
+let staffNames = [];
+let staffRecords = [];
+let staffUnsubscribe = null;
+  
+// FIRESTORE PICKER RECORD SYNC
+
+let pickerUnsubscribe = null;
+  let loadingUnsubscribe = null;
+  let routeLoadingUnsubscribe = null;
+  let shiftHistoryEntries = [];
+let shiftHistoryUnsubscribe = null;
+
+async function startLoadingSync() {
+    try {
+        const migrationKey = "loadingEntriesMigratedToFirebase";
+
+        if (localStorage.getItem(migrationKey) !== "yes") {
+
+            const batchOfLocalRecords = [...loadingEntries];
+
+            for (const record of batchOfLocalRecords) {
+                await db.collection("loadingEntries")
+                    .doc(String(record.id))
+                    .set(record);
+            }
+
+            localStorage.setItem(migrationKey, "yes");
+        }
+
+        if (loadingUnsubscribe) {
+            loadingUnsubscribe();
+            loadingUnsubscribe = null;
+        }
+
+        loadingUnsubscribe = db.collection("loadingEntries")
+            .onSnapshot(snapshot => {
+
+                loadingEntries = snapshot.docs.map(doc => {
+                    const record = doc.data();
+
+                    return {
+                        ...record,
+                        id: record.id || doc.id
+                    };
+                });
+
+                saveLoadingEntries();
+                renderLoading();
+
+            }, error => {
+                console.error("Loading sync error:", error);
+                alert("Loading records could not sync: " + error.message);
+            });
+
+    } catch (error) {
+        console.error("Loading migration error:", error);
+        alert("Could not transfer existing loading records: " + error.message);
+    }
+}
+  // FIRESTORE SHIFT HISTORY SYNC
+
+async function startShiftHistorySync() {
+
+    const migrationKey = "shiftHistoryMigratedToFirebase";
+
+    try {
+
+        if (localStorage.getItem(migrationKey) !== "yes") {
+
+            const savedHistory = JSON.parse(
+                localStorage.getItem("shiftHistoryEntries") || "[]"
+            );
+
+            for (const entry of savedHistory) {
+
+                if (entry.id) {
+                    await db.collection("shiftHistory")
+                        .doc(String(entry.id))
+                        .set(entry);
+                }
+            }
+
+            localStorage.setItem(migrationKey, "yes");
+        }
+
+        if (shiftHistoryUnsubscribe) {
+            shiftHistoryUnsubscribe();
+        }
+
+        shiftHistoryUnsubscribe = db.collection("shiftHistory")
+            .onSnapshot(snapshot => {
+
+                shiftHistoryEntries = snapshot.docs.map(doc => ({
+                    ...doc.data(),
+                    id: doc.id
+                }));
+
+                localStorage.setItem(
+                    "shiftHistoryEntries",
+                    JSON.stringify(shiftHistoryEntries)
+                );
+
+                renderShiftHistory();
+
+            }, error => {
+                console.error("Shift History sync error:", error);
+            });
+
+    } catch (error) {
+
+        console.error("Could not start Shift History sync:", error);
+        alert("Could not load Shift History from Firebase.");
+
+    }
+}
+  // RENDER SHIFT HISTORY
+
+function renderShiftHistory() {
+
+    const tbody = document.getElementById("shiftHistoryResults");
+    const actionsHeading = document.getElementById("historyActionsHeading");
+
+    if (!tbody) return;
+
+    if (actionsHeading) {
+        actionsHeading.style.display = adminUnlocked ? "" : "none";
+    }
+
+    const sortedHistory = [...shiftHistoryEntries].sort((a, b) =>
+        String(b.date || "").localeCompare(String(a.date || ""))
+    );
+
+    tbody.innerHTML = "";
+
+    if (sortedHistory.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="${adminUnlocked ? 9 : 8}">
+                    No shift history recorded yet.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    sortedHistory.forEach(entry => {
+
+        const row = document.createElement("tr");
+
+        const values = [
+            entry.date || "",
+            entry.routes ?? "",
+            entry.weight ?? "",
+            entry.plannedStaff ?? "",
+            entry.actualStaff ?? "",
+            `${entry.breakStart || ""} (${entry.breakDuration || ""} mins)`,
+            entry.plannedFinish || "",
+            entry.actualFinish || ""
+        ];
+
+        values.forEach(value => {
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+
+        if (adminUnlocked) {
+
+            const actionsCell = document.createElement("td");
+
+            const editButton = document.createElement("button");
+            editButton.textContent = "Edit";
+            editButton.type = "button";
+            editButton.onclick = () => editShiftHistory(entry.id);
+
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.type = "button";
+            deleteButton.onclick = () => deleteShiftHistory(entry.id);
+
+            actionsCell.appendChild(editButton);
+            actionsCell.appendChild(deleteButton);
+            row.appendChild(actionsCell);
+        }
+
+        tbody.appendChild(row);
+    });
+}
+  // ADD SHIFT HISTORY
+
+async function addShiftHistory() {
+
+    if (!auth.currentUser) {
+        alert("Please log in first.");
+        return;
+    }
+
+    const date = document.getElementById("historyDate").value;
+    const routes = Number(document.getElementById("historyRoutes").value);
+    const weight = Number(document.getElementById("historyWeight").value);
+    const plannedStaff = Number(document.getElementById("historyPlannedStaff").value);
+    const actualStaff = Number(document.getElementById("historyActualStaff").value);
+    const breakStart = document.getElementById("historyBreakStart").value;
+    const breakDuration = Number(document.getElementById("historyBreakDuration").value);
+    const plannedFinish = document.getElementById("historyPlannedFinish").value;
+    const actualFinish = document.getElementById("historyActualFinish").value;
+
+    if (
+        !date ||
+        !Number.isInteger(routes) || routes < 0 ||
+        !Number.isFinite(weight) || weight < 0 ||
+        !Number.isInteger(plannedStaff) || plannedStaff < 0 ||
+        !Number.isInteger(actualStaff) || actualStaff < 0 ||
+        !breakStart ||
+        !plannedFinish ||
+        !actualFinish
+    ) {
+        alert("Please complete all the fields with valid values.");
+        return;
+    }
+
+    const id = String(Date.now());
+
+    const record = {
+        date,
+        routes,
+        weight,
+        plannedStaff,
+        actualStaff,
+        breakStart,
+        breakDuration,
+        plannedFinish,
+        actualFinish,
+        createdAt: Date.now()
+    };
+
+    try {
+
+        await db.collection("shiftHistory")
+            .doc(id)
+            .set(record);
+
+        document.getElementById("historyRoutes").value = "";
+        document.getElementById("historyWeight").value = "";
+        document.getElementById("historyPlannedStaff").value = "";
+        document.getElementById("historyActualStaff").value = "";
+        document.getElementById("historyBreakStart").value = "";
+        document.getElementById("historyActualFinish").value = "";
+
+        alert("Shift history saved.");
+
+    } catch (error) {
+
+    console.error("Error saving shift history:", error);
+
+    alert(
+        "Shift History Error:\n" +
+        error.code + "\n" +
+        error.message
+    );
+
+}
+}
+  // EDIT SHIFT HISTORY
+
+async function editShiftHistory(id) {
+
+    if (!adminUnlocked) {
+        alert("Admin access required.");
+        return;
+    }
+
+    const entry = shiftHistoryEntries.find(item => String(item.id) === String(id));
+
+    if (!entry) return;
+
+    const date = prompt("Shift date (YYYY-MM-DD):", entry.date);
+    if (date === null) return;
+
+    const routes = prompt("Total routes completed:", entry.routes);
+    if (routes === null) return;
+
+    const weight = prompt("Total weight handled (kg):", entry.weight);
+    if (weight === null) return;
+
+    const plannedStaff = prompt("Planned staff:", entry.plannedStaff);
+    if (plannedStaff === null) return;
+
+    const actualStaff = prompt("Actual staff:", entry.actualStaff);
+    if (actualStaff === null) return;
+
+    const breakStart = prompt("Break start time:", entry.breakStart);
+    if (breakStart === null) return;
+
+    const breakDuration = prompt("Break duration in minutes:", entry.breakDuration);
+    if (breakDuration === null) return;
+
+    const plannedFinish = prompt("Planned finish time:", entry.plannedFinish);
+    if (plannedFinish === null) return;
+
+    const actualFinish = prompt("Actual finish time:", entry.actualFinish);
+    if (actualFinish === null) return;
+
+    const updated = {
+        date: date.trim(),
+        routes: Number(routes),
+        weight: Number(weight),
+        plannedStaff: Number(plannedStaff),
+        actualStaff: Number(actualStaff),
+        breakStart: breakStart.trim(),
+        breakDuration: Number(breakDuration),
+        plannedFinish: plannedFinish.trim(),
+        actualFinish: actualFinish.trim()
+    };
+
+    if (
+        !updated.date ||
+        !Number.isInteger(updated.routes) || updated.routes < 0 ||
+        !Number.isFinite(updated.weight) || updated.weight < 0 ||
+        !Number.isInteger(updated.plannedStaff) || updated.plannedStaff < 0 ||
+        !Number.isInteger(updated.actualStaff) || updated.actualStaff < 0 ||
+        !updated.breakStart ||
+        ![30, 45, 60].includes(updated.breakDuration) ||
+        !updated.plannedFinish ||
+        !updated.actualFinish
+    ) {
+        alert("One or more values are invalid. No changes have been saved.");
+        return;
+    }
+
+    try {
+
+        await db.collection("shiftHistory")
+            .doc(String(id))
+            .update(updated);
+
+        alert("Shift history updated.");
+
+    } catch (error) {
+
+        console.error("Error updating shift history:", error);
+        alert("Could not update shift history.");
+
+    }
+}
+
+
+// DELETE SHIFT HISTORY
+
+async function deleteShiftHistory(id) {
+
+    if (!adminUnlocked) {
+        alert("Admin access required.");
+        return;
+    }
+
+    if (!confirm("Are you sure you want to delete this shift record?")) {
+        return;
+    }
+
+    try {
+
+        await db.collection("shiftHistory")
+            .doc(String(id))
+            .delete();
+
+        alert("Shift history deleted.");
+
+    } catch (error) {
+
+        console.error("Error deleting shift history:", error);
+        alert("Could not delete shift history.");
+
+    }
+}
+async function startRouteLoadingSync() {
+    try {
+        const migrationKey = "routeLoadingEntriesMigratedToFirebase";
+
+        if (localStorage.getItem(migrationKey) !== "yes") {
+
+            const batchOfLocalRecords = [...routeLoadingEntries];
+
+            for (const record of batchOfLocalRecords) {
+                await db.collection("routeLoadingEntries")
+                    .doc(String(record.id))
+                    .set(record);
+            }
+
+            localStorage.setItem(migrationKey, "yes");
+        }
+
+        if (routeLoadingUnsubscribe) {
+            routeLoadingUnsubscribe();
+            routeLoadingUnsubscribe = null;
+        }
+
+        routeLoadingUnsubscribe = db.collection("routeLoadingEntries")
+            .onSnapshot(snapshot => {
+
+                routeLoadingEntries = snapshot.docs.map(doc => {
+                    const record = doc.data();
+
+                    return {
+                        ...record,
+                        id: record.id || doc.id
+                    };
+                });
+
+                saveRouteLoadingEntries();
+                renderRouteLoading();
+
+            }, error => {
+                console.error("Route loading sync error:", error);
+                alert("Route loading records could not sync: " + error.message);
+            });
+
+    } catch (error) {
+        console.error("Route loading migration error:", error);
+        alert("Could not transfer existing route records: " + error.message);
+    }
+}
+  async function startVanDetailsSync() {
+    try {
+        const migrationKey = "vanDetailsMigratedToFirebase";
+
+        if (localStorage.getItem(migrationKey) !== "yes") {
+
+            const batchOfLocalRecords = [...vanDetailsEntries];
+
+            for (const record of batchOfLocalRecords) {
+                await db.collection("vanDetails")
+                    .doc(String(record.id))
+                    .set(record);
+            }
+
+            localStorage.setItem(migrationKey, "yes");
+        }
+
+        if (vanDetailsUnsubscribe) {
+            vanDetailsUnsubscribe();
+            vanDetailsUnsubscribe = null;
+        }
+
+        vanDetailsUnsubscribe = db.collection("vanDetails")
+            .onSnapshot(snapshot => {
+
+                vanDetailsEntries = snapshot.docs.map(doc => {
+                    const record = doc.data();
+
+                    return {
+                        ...record,
+                        id: record.id || doc.id
+                    };
+                });
+
+                saveVanDetailsEntries();
+                renderVanDetails();
+              renderRouteLoading();
+
+            }, error => {
+                console.error("Van details sync error:", error);
+                alert("Van details could not sync: " + error.message);
+            });
+
+    } catch (error) {
+        console.error("Van details migration error:", error);
+        alert("Could not transfer existing van details: " + error.message);
+    }
+}
+  
+
+function addVanDetails() {
+
+    const date = document.getElementById("vanDetailsDate").value;
+    const area = document.getElementById("vanDetailsArea").value;
+    const route = document.getElementById("vanDetailsRoute").value.trim();
+    const weight = Number(document.getElementById("vanDetailsWeight").value);
+    const units = Number(document.getElementById("vanDetailsUnits").value);
+
+    if (!date) {
+        alert("Please select a shift date.");
+        return;
+    }
+
+    if (!/^\d{3}$/.test(route)) {
+        alert("Please enter a three-digit route number.");
+        return;
+    }
+
+    if (!Number.isFinite(weight) || weight <= 0) {
+        alert("Please enter a valid total weight.");
+        return;
+    }
+
+    if (!Number.isInteger(units) || units <= 0) {
+        alert("Please enter a valid total number of units.");
+        return;
+    }
+
+    const record = {
+        id: Date.now(),
+        date: date,
+        area: area,
+        route: route,
+        weight: weight,
+        units: units
+    };
+
+    db.collection("vanDetails")
+        .doc(String(record.id))
+        .set(record)
+        .then(() => {
+
+            document.getElementById("vanDetailsRoute").value = "";
+            document.getElementById("vanDetailsWeight").value = "";
+            document.getElementById("vanDetailsUnits").value = "";
+vanDetailsEntries.push(record);
+localStorage.setItem("vanDetailsEntries", JSON.stringify(vanDetailsEntries));
+renderVanDetails();
+            alert("Van details saved successfully.");
+
+        })
+        .catch(error => {
+            console.error("Save van details error:", error);
+            alert("Could not save van details: " + error.message);
+        });
+}
+  function renderVanDetails() {
+
+    const results = document.getElementById("vanDetailsResults");
+    const deleteHeading = document.getElementById("vanDetailsDeleteHeading");
+
+    if (!results) return;
+
+    results.innerHTML = "";
+
+    if (deleteHeading) {
+        deleteHeading.classList.toggle("hidden", !adminUnlocked);
+    }
+
+    const records = [...vanDetailsEntries].sort((a, b) => {
+        return b.date.localeCompare(a.date) ||
+               String(a.route).localeCompare(String(b.route));
+    });
+
+    records.forEach(record => {
+
+        const row = document.createElement("tr");
+
+        const dateCell = document.createElement("td");
+        dateCell.textContent = record.date || "";
+
+        const areaCell = document.createElement("td");
+        areaCell.textContent = record.area || "";
+
+        const routeCell = document.createElement("td");
+        routeCell.textContent = record.route || "";
+
+        const weightCell = document.createElement("td");
+        weightCell.textContent =
+            Number(record.weight).toLocaleString("en-GB");
+
+        const unitsCell = document.createElement("td");
+        unitsCell.textContent =
+            Number(record.units).toLocaleString("en-GB");
+
+        row.appendChild(dateCell);
+        row.appendChild(areaCell);
+        row.appendChild(routeCell);
+        row.appendChild(weightCell);
+        row.appendChild(unitsCell);
+
+        if (adminUnlocked) {
+            const actions = document.createElement("td");
+
+            const editButton = document.createElement("button");
+            editButton.textContent = "Edit";
+            editButton.onclick = () => editVanDetails(record.id);
+
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.className = "danger";
+            deleteButton.onclick = () => deleteVanDetails(record.id);
+
+            actions.appendChild(editButton);
+            actions.appendChild(deleteButton);
+
+            row.appendChild(actions);
+        }
+
+        results.appendChild(row);
+    });
+}
+  function deleteVanDetails(id) {
+
+    if (!adminUnlocked) {
+        alert("Administrator access required.");
+        return;
+    }
+
+    if (!confirm("Are you sure you want to delete this van record?")) {
+        return;
+    }
+
+    db.collection("vanDetails")
+        .doc(String(id))
+        .delete()
+        .then(() => {
+            alert("Van record deleted.");
+        })
+        .catch(error => {
+            console.error("Delete van details error:", error);
+            alert("Could not delete van record: " + error.message);
+        });
+}
+  function editVanDetails(id) {
+
+    if (!adminUnlocked) {
+        alert("Administrator access required.");
+        return;
+    }
+
+    const record = vanDetailsEntries.find(
+        item => String(item.id) === String(id)
+    );
+
+    if (!record) {
+        alert("Van record not found.");
+        return;
+    }
+
+    const date = prompt("Shift date (YYYY-MM-DD):", record.date);
+    if (date === null) return;
+
+    const area = prompt("Loading area (Frozen or Ambient):", record.area);
+    if (area === null) return;
+
+    const route = prompt("Three-digit route number:", record.route);
+    if (route === null) return;
+
+    const weight = prompt("Total weight in kg:", record.weight);
+    if (weight === null) return;
+
+    const units = prompt("Total units:", record.units);
+    if (units === null) return;
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        alert("Please enter the date as YYYY-MM-DD.");
+        return;
+    }
+
+    if (!["Frozen", "Ambient"].includes(area)) {
+        alert("Area must be Frozen or Ambient.");
+        return;
+    }
+
+    if (!/^\d{3}$/.test(route.trim())) {
+        alert("Route number must contain exactly three digits.");
+        return;
+    }
+
+    if (!Number.isFinite(Number(weight)) || Number(weight) <= 0) {
+        alert("Please enter a valid weight.");
+        return;
+    }
+
+    if (!Number.isInteger(Number(units)) || Number(units) <= 0) {
+        alert("Please enter a valid number of units.");
+        return;
+    }
+
+    db.collection("vanDetails")
+        .doc(String(id))
+        .update({
+            date: date,
+            area: area,
+            route: route.trim(),
+            weight: Number(weight),
+            units: Number(units)
+        })
+        .then(() => {
+            alert("Van record updated successfully.");
+        })
+        .catch(error => {
+            console.error("Edit van details error:", error);
+            alert("Could not update van record: " + error.message);
+        });
+}
+async function startPickerSync() {
+    try {
+        // Migrate existing records from this device once
+        const migrationKey = "pickerEntriesMigratedToFirebase";
+
+        if (localStorage.getItem(migrationKey) !== "yes") {
+
+            const batchOfLocalRecords = [...entries];
+
+            for (const record of batchOfLocalRecords) {
+                await db.collection("pickerEntries")
+                    .doc(String(record.id))
+                    .set(record);
+            }
+
+            localStorage.setItem(migrationKey, "yes");
+        }
+
+        // Stop any previous listener
+        if (pickerUnsubscribe) {
+            pickerUnsubscribe();
+            pickerUnsubscribe = null;
+        }
+
+        // Listen for records from all devices
+        pickerUnsubscribe = db.collection("pickerEntries")
+            .onSnapshot(snapshot => {
+
+                entries = snapshot.docs.map(doc => {
+                    const record = doc.data();
+
+                    return {
+                        ...record,
+                        id: record.id || doc.id
+                    };
+                });
+
+                saveEntries();
+                renderEntries();
+
+            }, error => {
+                console.error("Picker sync error:", error);
+                alert("Picker records could not sync: " + error.message);
+            });
+
+    } catch (error) {
+        console.error("Picker migration error:", error);
+        alert("Could not transfer existing picker records: " + error.message);
+    }
+}
+
+
+// SAVE DATA
+
+function saveEntries() {
+    localStorage.setItem("pickerEntries", JSON.stringify(entries));
+}
+
+function saveLoadingEntries() {
+    localStorage.setItem("loadingEntries", JSON.stringify(loadingEntries));
+}
+
+function saveRouteLoadingEntries() {
+    localStorage.setItem(
+        "routeLoadingEntries",
+        JSON.stringify(routeLoadingEntries)
+    );
+}
+function saveVanDetailsEntries() {
+    localStorage.setItem(
+        "vanDetailsEntries",
+        JSON.stringify(vanDetailsEntries)
+    );
+}
+function saveActiveRouteTimer() {
+    if (activeRouteTimer) {
+        localStorage.setItem(
+            "activeRouteTimer",
+            JSON.stringify(activeRouteTimer)
+        );
+    } else {
+        localStorage.removeItem("activeRouteTimer");
+    }
+}
+
+// STAFF MANAGEMENT - FIRESTORE
+
+function startStaffListener() {
+    if (staffUnsubscribe) {
+        staffUnsubscribe();
+        staffUnsubscribe = null;
+    }
+
+    staffUnsubscribe = db.collection("staff").onSnapshot(snapshot => {
+      const status = document.getElementById("staffStatus");
+
+if (status) {
+    status.textContent = "Firebase connected. Found " + snapshot.size + " staff documents.";
+}
+
+        staffRecords = snapshot.docs
+            .map(doc => {
+                const data = doc.data();
+
+                return {
+                    id: doc.id,
+                    name: String(data.name || data.Name || "").trim()
+                };
+            })
+            .filter(staff => staff.name !== "")
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+        staffNames = staffRecords.map(staff => staff.name);
+
+        renderPickerDropdown();
+        renderStaff();
+
+    }, error => {
+        console.error("Staff loading error:", error);
+      const status = document.getElementById("staffStatus");
+
+if (status) {
+    status.textContent = "Firebase error: " + error.message;
+}
+        alert("Could not load staff from Firebase: " + error.message);
+    });
+}
+
+function renderPickerDropdown() {
+    const dropdown = document.getElementById("pickerName");
+    if (!dropdown) return;
+
+    const selected = dropdown.value;
+
+    dropdown.innerHTML = '<option value="">Select a picker</option>';
+
+    staffNames.forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        dropdown.appendChild(option);
+    });
+
+    if (staffNames.includes(selected)) {
+        dropdown.value = selected;
+    }
+}
+
+function renderStaff() {
+    const list = document.getElementById("staffList");
+    if (!list) return;
+
+    if (staffRecords.length === 0) {
+        list.innerHTML = "<p>No staff members added yet.</p>";
+        return;
+    }
+
+    list.innerHTML = staffRecords.map((staff, index) => `
+        <div class="staff-item">
+            <div class="staff-name">${escapeHTML(staff.name)}</div>
+
+            <button class="edit-button"
+                onclick="renameStaffAt(${index})">
+                Rename
+            </button>
+
+            <button class="danger"
+                onclick="removeStaffAt(${index})">
+                Remove
+            </button>
+        </div>
+    `).join("");
+}
+
+function addStaff() {
+    if (!adminUnlocked) return;
+
+    const input = document.getElementById("newStaffName");
+    const name = input.value.trim();
+
+    if (!name) {
+        alert("Please enter a staff member's name.");
+        return;
+    }
+
+    if (staffNames.some(n => n.toLowerCase() === name.toLowerCase())) {
+        alert("That staff member is already on the list.");
+        return;
+    }
+
+    db.collection("staff").add({
+        name: name
+    })
+    .then(() => {
+        input.value = "";
+        alert(name + " has been added.");
+    })
+    .catch(error => {
+        alert("Could not add staff member: " + error.message);
+    });
+}
+
+function renameStaffAt(index) {
+    if (!adminUnlocked) return;
+
+    const staff = staffRecords[index];
+    if (!staff) return;
+
+    const newName = prompt("Enter the new name:", staff.name);
+
+    if (newName === null) return;
+
+    const cleanedName = newName.trim();
+
+    if (!cleanedName) {
+        alert("Name cannot be empty.");
+        return;
+    }
+
+    if (staffNames.some((n, i) =>
+        i !== index && n.toLowerCase() === cleanedName.toLowerCase()
+    )) {
+        alert("That name is already on the staff list.");
+        return;
+    }
+
+    db.collection("staff").doc(staff.id).update({
+        name: cleanedName
+    })
+    .then(() => {
+        alert("Staff name updated. Previous records have not been changed.");
+    })
+    .catch(error => {
+        alert("Could not rename staff member: " + error.message);
+    });
+}
+
+function removeStaffAt(index) {
+    if (!adminUnlocked) return;
+
+    const staff = staffRecords[index];
+    if (!staff) return;
+
+    if (!confirm("Remove " + staff.name + " from the picker dropdown?")) {
+        return;
+    }
+
+    db.collection("staff").doc(staff.id).delete()
+    .then(() => {
+        alert(staff.name + " has been removed. Previous records are still saved.");
+    })
+    .catch(error => {
+        alert("Could not remove staff member: " + error.message);
+    });
+}
+
+// DATE HELPERS
+
+function todayString() {
+    const today = new Date();
+    const offset = today.getTimezoneOffset();
+    return new Date(today.getTime() - offset * 60000)
+        .toISOString().split("T")[0];
+}
+
+document.getElementById("entryDate").value = todayString();
+document.getElementById("filterDate").value = todayString();
+document.getElementById("loadingDate").value = todayString();
+document.getElementById("routeDate").value = todayString();
+  document.getElementById("vanDetailsDate").value = todayString();
+
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, function(character) {
+        return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+        }[character];
+    });
+}
+
+function formatClock(timestamp) {
+    return new Date(timestamp).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+    });
+}
+
+// ADD PICKER RECORD
+
+function addPicker() {
+    const date = document.getElementById("entryDate").value;
+    const name = document.getElementById("pickerName").value.trim();
+    const building = document.getElementById("building").value;
+    const routes = Number(document.getElementById("routes").value);
+    const units = Number(document.getElementById("units").value);
+    const minutes = Number(document.getElementById("minutes").value);
+
+    if (!date || !name || !staffNames.includes(name) ||
+        !routes || !units || !minutes ||
+        routes < 1 || units < 1 || minutes < 1 ||
+        !Number.isInteger(routes)) {
+        alert("Please select a picker and enter valid routes, units and picking time.");
+        return;
+    }
+
+    const record = {
+        id: Date.now() + Math.random(),
+        date,
+        name,
+        building,
+        routes,
+        units,
+        minutes
+    };
+
+    db.collection("pickerEntries")
+        .doc(String(record.id))
+        .set(record)
+        .then(() => {
+            document.getElementById("filterDate").value = date;
+            document.getElementById("pickerName").value = "";
+            document.getElementById("routes").value = "";
+            document.getElementById("units").value = "";
+            document.getElementById("minutes").value = "";
+
+            alert("Picker record added successfully.");
+
+            renderEntries();
+        })
+        .catch(error => {
+            console.error("Picker save error:", error);
+            alert("Could not save picker record: " + error.message);
+        });
+}
+
+// MANUAL LOADING RECORD
+
+
+function addLoading(area) {
+    const date = document.getElementById("loadingDate").value;
+    const prefix = area.toLowerCase();
+
+    const loaders = Number(document.getElementById(prefix + "Loaders").value);
+    const vans = Number(document.getElementById(prefix + "Vans").value);
+    const minutes = Number(document.getElementById(prefix + "Minutes").value);
+
+    if (!date || !loaders || !vans || !minutes ||
+        loaders < 1 || vans < 1 || minutes < 1 ||
+        !Number.isInteger(loaders) || !Number.isInteger(vans)) {
+        alert("Please enter a valid date, number of loaders, vans and loading minutes.");
+        return;
+    }
+
+    const record = {
+        id: Date.now() + Math.random(),
+        date: date,
+        area: area,
+        loaders: loaders,
+        vans: vans,
+        minutes: minutes
+    };
+
+    db.collection("loadingEntries")
+        .doc(String(record.id))
+        .set(record)
+        .then(() => {
+            document.getElementById("filterDate").value = date;
+            document.getElementById(prefix + "Loaders").value = "";
+            document.getElementById(prefix + "Vans").value = "";
+            document.getElementById(prefix + "Minutes").value = "";
+
+            alert(area + " loading record saved.");
+          renderEntries();
+        })
+        .catch(error => {
+            console.error("Loading save error:", error);
+            alert("Could not save loading record: " + error.message);
+        });
+}
+
+        
+
+// INDIVIDUAL ROUTE TIMER
+
+function startRouteTimer() {
+    if (activeRouteTimer) {
+        alert("A route timer is already running. Finish that route first.");
+        return;
+    }
+
+    const date = document.getElementById("routeDate").value;
+    const area = document.getElementById("routeArea").value;
+    const routeNumber = document.getElementById("routeNumber").value.trim();
+    const loaders = Number(document.getElementById("routeLoaders").value);
+
+    if (!date) {
+        alert("Please select a date.");
+        return;
+    }
+
+    if (!/^\d{3}$/.test(routeNumber)) {
+        alert("Please enter a three-digit route number, for example 125.");
+        return;
+    }
+
+    if (!Number.isInteger(loaders) || loaders < 1) {
+        alert("Please enter a valid number of loaders.");
+        return;
+    }
+
+    activeRouteTimer = {
+        id: Date.now() + Math.random(),
+        date: date,
+        area: area,
+        routeNumber: routeNumber,
+        loaders: loaders,
+        startedAt: Date.now()
+    };
+
+    saveActiveRouteTimer();
+
+    document.getElementById("routeNumber").disabled = true;
+    document.getElementById("routeLoaders").disabled = true;
+    document.getElementById("routeArea").disabled = true;
+    document.getElementById("routeDate").disabled = true;
+
+    updateRouteTimerDisplay();
+    updateRouteTimerButtons();
+
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(updateRouteTimerDisplay, 1000);
+}
+
+function finishRouteTimer() {
+    if (!activeRouteTimer) return;
+
+    const finishedAt = Date.now();
+    const durationMs = finishedAt - activeRouteTimer.startedAt;
+    const minutes = durationMs / 60000;
+
+    const record = {
+        id: Date.now(),
+        date: activeRouteTimer.date,
+        area: activeRouteTimer.area,
+        routeNumber: activeRouteTimer.routeNumber,
+        loaders: activeRouteTimer.loaders,
+        startedAt: activeRouteTimer.startedAt,
+        finishedAt: finishedAt,
+        durationMs: durationMs,
+        minutes: minutes
+    };
+
+    document.getElementById("finishRouteButton").disabled = true;
+    document.getElementById("timerStatus").textContent = "Saving route...";
+
+    db.collection("routeLoadingEntries")
+        .doc(String(record.id))
+        .set(record)
+        .then(() => {
+            routeLoadingEntries.push(record);
+            localStorage.setItem("routeLoadingEntries", JSON.stringify(routeLoadingEntries));
+
+            activeRouteTimer = null;
+            localStorage.removeItem("activeRouteTimer");
+
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+
+            document.getElementById("routeDate").value = "";
+            document.getElementById("routeArea").value = "Frozen";
+            document.getElementById("routeNumber").value = "";
+            document.getElementById("routeLoaders").value = "";
+
+            document.getElementById("timerDisplay").textContent = "00:00:00";
+            document.getElementById("timerStatus").textContent = "Route completed";
+
+            document.getElementById("routeDate").disabled = false;
+            document.getElementById("routeArea").disabled = false;
+            document.getElementById("routeNumber").disabled = false;
+            document.getElementById("routeLoaders").disabled = false;
+
+            updateRouteTimerButtons();
+
+            document.getElementById("filterDate").value = record.date;
+
+            renderEntries();
+
+            alert("Route loading record saved successfully.");
+        })
+        .catch(error => {
+            console.error("Error saving route loading record:", error);
+
+            document.getElementById("finishRouteButton").disabled = false;
+            document.getElementById("timerStatus").textContent = "Save failed - route still active";
+
+            alert("Could not save the route record. Your timer has been kept. Please try again.");
+        });
+}
+
+function formatDuration(milliseconds) {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    return String(hours).padStart(2, "0") + ":" +
+        String(minutes).padStart(2, "0") + ":" +
+        String(seconds).padStart(2, "0");
+}
+
+function updateRouteTimerDisplay() {
+    if (!activeRouteTimer) return;
+
+    const elapsed = Date.now() - activeRouteTimer.startedAt;
+
+    document.getElementById("timerDisplay").textContent =
+        formatDuration(elapsed);
+
+    document.getElementById("timerStatus").textContent =
+        "LOADING IN PROGRESS";
+
+    document.getElementById("activeRouteDetails").textContent =
+        activeRouteTimer.area + " | Route " +
+        activeRouteTimer.routeNumber + " | " +
+        activeRouteTimer.loaders + " loader(s) | Started " +
+        formatClock(activeRouteTimer.startedAt);
+}
+
+function updateRouteTimerButtons() {
+    const running = Boolean(activeRouteTimer);
+
+    document.getElementById("startRouteButton").classList.toggle(
+        "hidden", running
+    );
+
+    document.getElementById("finishRouteButton").classList.toggle(
+        "hidden", !running
+    );
+}
+
+// RESTORE TIMER AFTER REOPENING APP
+
+function restoreRouteTimer() {
+    if (activeRouteTimer) {
+        document.getElementById("routeNumber").value =
+            activeRouteTimer.routeNumber;
+        document.getElementById("routeLoaders").value =
+            activeRouteTimer.loaders;
+        document.getElementById("routeArea").value =
+            activeRouteTimer.area;
+        document.getElementById("routeDate").value =
+            activeRouteTimer.date;
+
+        document.getElementById("routeNumber").disabled = true;
+        document.getElementById("routeLoaders").disabled = true;
+        document.getElementById("routeArea").disabled = true;
+        document.getElementById("routeDate").disabled = true;
+
+        updateRouteTimerDisplay();
+        updateRouteTimerButtons();
+
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(updateRouteTimerDisplay, 1000);
+    } else {
+        updateRouteTimerButtons();
+    }
+}
+
+// REPORT DATE FILTER
+
+function getDateRange() {
+    const selected = document.getElementById("filterDate").value;
+    const period = document.getElementById("period").value;
+
+    if (!selected) return null;
+
+    const date = new Date(selected + "T12:00:00");
+    let start = new Date(date);
+    let end = new Date(date);
+
+    if (period === "weekly") {
+        const day = (date.getDay() + 6) % 7;
+        start.setDate(date.getDate() - day);
+        end.setDate(start.getDate() + 6);
+    }
+
+    if (period === "monthly") {
+        start = new Date(date.getFullYear(), date.getMonth(), 1);
+        end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    }
+
+    function formatDate(d) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+    }
+
+    return {
+        start: formatDate(start),
+        end: formatDate(end)
+    };
+}
+
+function getPeriodEntries() {
+    const range = getDateRange();
+
+    if (!range) return [];
+
+    document.getElementById("periodDescription").textContent =
+        "Showing records from " + range.start + " to " + range.end;
+
+    return entries.filter(e =>
+        e.date >= range.start && e.date <= range.end
+    );
+}
+
+function getPeriodLoading() {
+    const range = getDateRange();
+
+    if (!range) return [];
+
+    return loadingEntries.filter(e =>
+        e.date >= range.start && e.date <= range.end
+    );
+}
+
+function getPeriodRouteLoading() {
+    const range = getDateRange();
+
+    if (!range) return [];
+
+    return routeLoadingEntries.filter(e =>
+        e.date >= range.start && e.date <= range.end
+    );
+}
+
+// PICKING CALCULATIONS
+
+function getRate(entry) {
+    if (!entry.minutes || entry.minutes <= 0) return 0;
+    return entry.units / entry.minutes * 60;
+}
+
+function getStoreAverage(filtered, building) {
+    const storeEntries = filtered.filter(e =>
+        (e.building || "Unassigned") === building
+    );
+
+    const units = storeEntries.reduce((sum, e) => sum + Number(e.units), 0);
+    const minutes = storeEntries.reduce((sum, e) => sum + Number(e.minutes), 0);
+
+    return minutes > 0 ? units / minutes * 60 : 0;
+}
+
+function groupPickerEntries(filtered) {
+    const grouped = {};
+
+    filtered.forEach(e => {
+        const building = e.building || "Unassigned";
+        const key = building + "|" + e.name.toLowerCase();
+
+        if (!grouped[key]) {
+            grouped[key] = {
+                name: e.name,
+                building: building,
+                units: 0,
+                minutes: 0,
+                routes: 0
+            };
+        }
+
+        grouped[key].units += Number(e.units);
+        grouped[key].minutes += Number(e.minutes);
+        grouped[key].routes += Number(e.routes);
+    });
+
+    return Object.values(grouped).map(person => {
+        person.rate = person.minutes > 0
+            ? person.units / person.minutes * 60 : 0;
+        return person;
+    });
+}
+
+function getPerformanceRating(difference) {
+    if (difference >= 10) return { label: "Excellent", className: "good" };
+    if (difference >= 5) return { label: "Above Average", className: "good" };
+    if (difference > -5) return { label: "Average", className: "average" };
+    if (difference > -10) return { label: "Below Average", className: "bad" };
+    return { label: "Needs Improvement", className: "bad" };
+}
+
+function buildLeaderboard(staff, elementId, storeAverage) {
+    const tbody = document.getElementById(elementId);
+
+    staff.sort((a, b) => b.rate - a.rate);
+
+    if (staff.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7">No records for this period</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = staff.map((person, index) => {
+        const difference = storeAverage > 0
+            ? (person.rate - storeAverage) / storeAverage * 100 : 0;
+
+        const rating = getPerformanceRating(difference);
+
+        const differenceText = storeAverage > 0
+            ? (difference > 0 ? "+" : "") + difference.toFixed(1) + "%"
+            : "-";
+
+        return `
+        <tr>
+            <td>${index + 1}</td>
+            <td>${escapeHTML(person.name)}</td>
+            <td>${person.units}</td>
+            <td>${person.rate.toFixed(1)}</td>
+            <td>${storeAverage.toFixed(1)}</td>
+            <td>${differenceText}</td>
+            <td class="${rating.className}">${rating.label}</td>
+        </tr>`;
+    }).join("");
+}
+
+// MANUAL LOADING CALCULATIONS
+
+function getLoadingStats(records, area) {
+    const selected = records.filter(e => e.area === area);
+
+    const vans = selected.reduce((sum, e) => sum + Number(e.vans), 0);
+    const minutes = selected.reduce((sum, e) => sum + Number(e.minutes), 0);
+    const loaderMinutes = selected.reduce(
+        (sum, e) => sum + Number(e.loaders) * Number(e.minutes), 0
+    );
+
+    return {
+        vans,
+        minutes,
+        loaderMinutes,
+        vansPerHour: minutes > 0 ? vans / minutes * 60 : 0,
+        vansPerLoaderHour: loaderMinutes > 0
+            ? vans / loaderMinutes * 60 : 0,
+        minutesPerVan: vans > 0 ? minutes / vans : 0
+    };
+}
+
+function renderLoading() {
+    const filtered = getPeriodLoading();
+
+    const frozen = getLoadingStats(filtered, "Frozen");
+    const ambient = getLoadingStats(filtered, "Ambient");
+
+    document.getElementById("frozenTotalVans").textContent = frozen.vans;
+    document.getElementById("frozenRate").textContent = frozen.vansPerHour.toFixed(2);
+    document.getElementById("frozenLoaderRate").textContent =
+        frozen.vansPerLoaderHour.toFixed(2);
+
+    document.getElementById("ambientTotalVans").textContent = ambient.vans;
+    document.getElementById("ambientRate").textContent = ambient.vansPerHour.toFixed(2);
+    document.getElementById("ambientLoaderRate").textContent =
+        ambient.vansPerLoaderHour.toFixed(2);
+
+    const sorted = [...filtered].sort((a, b) =>
+        b.date.localeCompare(a.date)
+    );
+
+    document.getElementById("loadingDeleteHeading").classList.toggle(
+        "hidden", !adminUnlocked
+    );
+
+    const tbody = document.getElementById("loadingResults");
+
+    if (sorted.length === 0) {
+        tbody.innerHTML =
+            `<tr><td colspan="${adminUnlocked ? 8 : 7}">No loading records for this period</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = sorted.map(e => {
+        const minutesPerVan = Number(e.vans) > 0
+            ? Number(e.minutes) / Number(e.vans) : 0;
+
+        const vansPerHour = Number(e.minutes) > 0
+            ? Number(e.vans) / Number(e.minutes) * 60 : 0;
+
+        const deleteCell = adminUnlocked
+            ? `<td>
+                <button class="edit-button" onclick="editLoading('${String(e.id)}')">Edit</button>
+                <button class="danger" onclick="deleteLoading('${String(e.id)}')">Delete</button>
+               </td>`
+            : "";
+
+        return `
+        <tr>
+            <td>${escapeHTML(e.date)}</td>
+            <td>${escapeHTML(e.area)}</td>
+            <td>${e.loaders}</td>
+            <td>${e.vans}</td>
+            <td>${e.minutes}</td>
+            <td>${minutesPerVan.toFixed(1)}</td>
+            <td>${vansPerHour.toFixed(2)}</td>
+            ${deleteCell}
+        </tr>`;
+    }).join("");
+}
+
+// INDIVIDUAL ROUTE LOADING RESULTS
+
+function renderRouteLoading() {
+    const filtered = getPeriodRouteLoading();
+
+    const frozen = filtered.filter(e => e.area === "Frozen");
+    const ambient = filtered.filter(e => e.area === "Ambient");
+
+    const total = filtered.length;
+
+    const average = total > 0
+        ? filtered.reduce((sum, e) => sum + Number(e.minutes), 0) / total
+        : 0;
+
+    const frozenAverage = frozen.length > 0
+        ? frozen.reduce((sum, e) => sum + Number(e.minutes), 0) / frozen.length
+        : 0;
+
+    const ambientAverage = ambient.length > 0
+        ? ambient.reduce((sum, e) => sum + Number(e.minutes), 0) / ambient.length
+        : 0;
+
+    document.getElementById("routeTotalCount").textContent = total;
+    document.getElementById("routeAverageMinutes").textContent =
+        average.toFixed(1) + " min";
+    document.getElementById("routeFrozenAverage").textContent =
+        frozenAverage.toFixed(1) + " min";
+    document.getElementById("routeAmbientAverage").textContent =
+        ambientAverage.toFixed(1) + " min";
+
+    document.getElementById("routeDeleteHeading").classList.toggle(
+        "hidden", !adminUnlocked
+    );
+
+    const sorted = [...filtered].sort((a, b) =>
+        b.startedAt - a.startedAt
+    );
+
+    const tbody = document.getElementById("routeLoadingResults");
+
+    if (sorted.length === 0) {
+        tbody.innerHTML =
+            `<tr><td colspan="${adminUnlocked ? 11 : 10}">No completed route records for this period</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = sorted.map(e => {
+        const deleteCell = adminUnlocked
+    ? `<td>
+        <button class="edit-button" onclick="editRouteLoading('${String(e.id)}')">Edit</button>
+        <button class="danger" onclick="deleteRouteLoading('${String(e.id)}')">Delete</button>
+       </td>`
+    : "";
+
+const vanDetails = vanDetailsEntries.find(v =>
+    String(v.date) === String(e.date) &&
+    v.area === e.area &&
+    String(v.route) === String(e.routeNumber)
+);
+
+const weight = vanDetails ? Number(vanDetails.weight) : 0;
+const units = vanDetails ? Number(vanDetails.units) : 0;
+
+const minutesPer1000Kg = weight > 0
+    ? (Number(e.minutes) / weight) * 1000
+    : null;
+
+return `
+<tr>
+    <td>${escapeHTML(e.date)}</td>
+    <td>${escapeHTML(e.routeNumber)}</td>
+    <td>${escapeHTML(e.area)}</td>
+    <td>${e.loaders}</td>
+    <td>${formatClock(e.startedAt)}</td>
+    <td>${formatClock(e.finishedAt)}</td>
+    <td>${Number(e.minutes).toFixed(1)}</td>
+    <td>${weight > 0 ? weight.toLocaleString("en-GB") : "-"}</td>
+    <td>${units > 0 ? units.toLocaleString("en-GB") : "-"}</td>
+    <td>${minutesPer1000Kg !== null ? minutesPer1000Kg.toFixed(1) : "-"}</td>
+    ${deleteCell}
+</tr>`;
+    }).join("");
+}
+
+// EDIT RECORDS - ADMIN ONLY
+
+function editEntry(id) {
+    if (!adminUnlocked) return;
+
+    const e = entries.find(x => String(x.id) === String(id));
+    if (!e) return;
+
+    const date = prompt("Enter date (YYYY-MM-DD):", e.date);
+    if (date === null) return;
+
+    const name = prompt("Enter picker name:", e.name);
+    if (name === null) return;
+
+    const building = prompt("Enter store (Freezer, Ambient or Chiller):", e.building);
+    if (building === null) return;
+
+    const routes = prompt("Enter number of routes:", e.routes);
+    if (routes === null) return;
+
+    const units = prompt("Enter total units:", e.units);
+    if (units === null) return;
+
+    const minutes = prompt("Enter total picking minutes:", e.minutes);
+    if (minutes === null) return;
+
+    if (!date || !name.trim() ||
+        !["Freezer", "Ambient", "Chiller"].includes(building) ||
+        !Number.isInteger(Number(routes)) || Number(routes) < 1 ||
+        !Number.isFinite(Number(units)) || Number(units) < 1 ||
+        !Number.isFinite(Number(minutes)) || Number(minutes) < 1) {
+        alert("Invalid details. No changes have been saved.");
+        return;
+    }
+
+    Object.assign(e, {
+        date,
+        name: name.trim(),
+        building,
+        routes: Number(routes),
+        units: Number(units),
+        minutes: Number(minutes)
+    });
+
+    db.collection("pickerEntries")
+        .doc(String(id))
+        .update(e)
+        .then(() => {
+            alert("Picker record updated.");
+        })
+        .catch(error => {
+            console.error("Picker update error:", error);
+            alert("Could not update picker record: " + error.message);
+        });
+}
+
+
+function editLoading(id) {
+    if (!adminUnlocked) return;
+
+    const e = loadingEntries.find(x => String(x.id) === String(id));
+    if (!e) return;
+
+    const date = prompt("Enter date (YYYY-MM-DD):", e.date);
+    if (date === null) return;
+
+    const area = prompt("Enter area (Frozen or Ambient):", e.area);
+    if (area === null) return;
+
+    const loaders = prompt("Enter number of loaders:", e.loaders);
+    if (loaders === null) return;
+
+    const vans = prompt("Enter number of vans:", e.vans);
+    if (vans === null) return;
+
+    const minutes = prompt("Enter loading minutes:", e.minutes);
+    if (minutes === null) return;
+
+    if (!date ||
+        !["Frozen", "Ambient"].includes(area) ||
+        !Number.isInteger(Number(loaders)) || Number(loaders) < 1 ||
+        !Number.isInteger(Number(vans)) || Number(vans) < 1 ||
+        !Number.isFinite(Number(minutes)) || Number(minutes) < 1) {
+        alert("Invalid details. No changes have been saved.");
+        return;
+    }
+
+    const updatedRecord = {
+        date,
+        area,
+        loaders: Number(loaders),
+        vans: Number(vans),
+        minutes: Number(minutes)
+    };
+
+    db.collection("loadingEntries")
+        .doc(String(id))
+        .update(updatedRecord)
+        .then(() => {
+            alert("Loading record updated.");
+        })
+        .catch(error => {
+            console.error("Loading update error:", error);
+            alert("Could not update loading record: " + error.message);
+        });
+}
+
+
+
+function editRouteLoading(id) {
+    if (!adminUnlocked) return;
+
+    const e = routeLoadingEntries.find(x => String(x.id) === String(id));
+    if (!e) return;
+
+    const date = prompt("Enter date (YYYY-MM-DD):", e.date);
+    if (date === null) return;
+
+    const routeNumber = prompt("Enter three-digit route number:", e.routeNumber);
+    if (routeNumber === null) return;
+
+    const area = prompt("Enter area (Frozen or Ambient):", e.area);
+    if (area === null) return;
+
+    const loaders = prompt("Enter number of loaders:", e.loaders);
+    if (loaders === null) return;
+
+    const minutes = prompt("Enter loading time in minutes:", Number(e.minutes).toFixed(1));
+    if (minutes === null) return;
+
+    if (!date || !/^\d{3}$/.test(routeNumber) ||
+        !["Frozen", "Ambient"].includes(area) ||
+        !Number.isInteger(Number(loaders)) || Number(loaders) < 1 ||
+        !Number.isFinite(Number(minutes)) || Number(minutes) <= 0) {
+        alert("Invalid details. No changes have been saved.");
+        return;
+    }
+
+    const durationMs = Number(minutes) * 60000;
+
+    const updatedRecord = {
+        date,
+        routeNumber,
+        area,
+        loaders: Number(loaders),
+        minutes: Number(minutes),
+        durationMs,
+        finishedAt: e.startedAt + durationMs
+    };
+
+    db.collection("routeLoadingEntries")
+        .doc(String(id))
+        .update(updatedRecord)
+        .then(() => {
+            alert("Route loading record updated.");
+        })
+        .catch(error => {
+            console.error("Route loading update error:", error);
+            alert("Could not update route record: " + error.message);
+        });
+}
+
+
+// DELETION - ADMIN ONLY
+
+function deleteEntry(id) {
+    if (!adminUnlocked) return;
+
+    if (!confirm("Are you sure you want to delete this picker record?")) return;
+
+  db.collection("pickerEntries")
+    .doc(String(id))
+    .delete()
+    .catch(error => {
+        console.error("Picker delete error:", error);
+        alert("Could not delete picker record: " + error.message);
+    });
+    renderEntries();
+}
+
+
+function deleteLoading(id) {
+    if (!adminUnlocked) return;
+
+    if (!confirm("Are you sure you want to delete this loading record?")) return;
+
+    db.collection("loadingEntries")
+        .doc(String(id))
+        .delete()
+        .then(() => {
+            alert("Loading record deleted.");
+        })
+        .catch(error => {
+            console.error("Loading delete error:", error);
+            alert("Could not delete loading record: " + error.message);
+        });
+}
+
+
+function deleteRouteLoading(id) {
+    if (!adminUnlocked) return;
+
+    if (!confirm("Are you sure you want to delete this individual route record?")) return;
+
+    db.collection("routeLoadingEntries")
+        .doc(String(id))
+        .delete()
+        .then(() => {
+            alert("Route loading record deleted.");
+        })
+        .catch(error => {
+            console.error("Route loading delete error:", error);
+            alert("Could not delete route record: " + error.message);
+        });
+}
+
+
+function clearAllEntries() {
+    if (!adminUnlocked) return;
+
+    if (!confirm("WARNING: This will permanently delete ALL picker records.")) return;
+
+    const confirmation = prompt('Type DELETE to confirm');
+
+    if (confirmation !== "DELETE") {
+        alert("Deletion cancelled.");
+        return;
+    }
+
+    db.collection("pickerEntries")
+    .get()
+    .then(snapshot => {
+        const deletions = snapshot.docs.map(doc => doc.ref.delete());
+
+        return Promise.all(deletions);
+    })
+    .then(() => {
+        alert("All picker records have been cleared.");
+    })
+    .catch(error => {
+        console.error("Clear picker records error:", error);
+        alert("Could not clear picker records: " + error.message);
+    });
+}
+
+
+function clearAllLoading() {
+    if (!adminUnlocked) return;
+
+    if (!confirm("WARNING: This will permanently delete ALL manual loading records.")) return;
+
+    const confirmation = prompt('Type DELETE to confirm');
+
+    if (confirmation !== "DELETE") {
+        alert("Deletion cancelled.");
+        return;
+    }
+
+    db.collection("loadingEntries")
+        .get()
+        .then(snapshot => {
+            const deletions = snapshot.docs.map(doc => doc.ref.delete());
+            return Promise.all(deletions);
+        })
+        .then(() => {
+            alert("All manual loading records have been cleared.");
+        })
+        .catch(error => {
+            console.error("Clear loading records error:", error);
+            alert("Could not clear loading records: " + error.message);
+        });
+}
+
+
+
+function clearAllRouteLoading() {
+    if (!adminUnlocked) return;
+
+    if (!confirm("WARNING: This will permanently delete ALL individual route loading records.")) return;
+
+    const confirmation = prompt('Type DELETE to confirm');
+
+    if (confirmation !== "DELETE") {
+        alert("Deletion cancelled.");
+        return;
+    }
+
+    db.collection("routeLoadingEntries")
+        .get()
+        .then(snapshot => {
+            const deletions = snapshot.docs.map(doc => doc.ref.delete());
+            return Promise.all(deletions);
+        })
+        .then(() => {
+            alert("All individual route records have been cleared.");
+        })
+        .catch(error => {
+            console.error("Clear route records error:", error);
+            alert("Could not clear route records: " + error.message);
+        });
+}
+
+
+// FIREBASE LOGIN
+
+function loginUser() {
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    const message = document.getElementById("loginMessage");
+
+    message.textContent = "Signing in...";
+
+    auth.signInWithEmailAndPassword(email, password)
+        .catch(error => {
+            message.textContent = "Login failed: " + error.message;
+        });
+}
+  function logoutUser() {
+    auth.signOut()
+        .catch(error => {
+            console.error("Logout error:", error);
+            alert("Could not log out: " + error.message);
+        });
+}
+
+function lockAdmin() {
+    logoutUser();
+}
+
+// AUTHENTICATION LISTENER
+auth.onAuthStateChanged(user => {
+    currentUser = user;
+  console.log("AUTH STATE CHANGED:", user);
+  document.getElementById("loginMessage").textContent =
+    "Authentication listener reached.";
+
+    if (pickerUnsubscribe) {
+        pickerUnsubscribe();
+        pickerUnsubscribe = null;
+    }
+
+    if (loadingUnsubscribe) {
+        loadingUnsubscribe();
+        loadingUnsubscribe = null;
+    }
+
+    if (routeLoadingUnsubscribe) {
+        routeLoadingUnsubscribe();
+        routeLoadingUnsubscribe = null;
+    }
+
+    if (vanDetailsUnsubscribe) {
+        vanDetailsUnsubscribe();
+        vanDetailsUnsubscribe = null;
+    }
+
+    if (staffUnsubscribe) {
+        staffUnsubscribe();
+        staffUnsubscribe = null;
+    }
+  if (shiftHistoryUnsubscribe) {
+    shiftHistoryUnsubscribe();
+    shiftHistoryUnsubscribe = null;
+}
+
+    const loginScreen = document.getElementById("loginScreen");
+    const mainApp = document.getElementById("mainApp");
+    const adminArea = document.getElementById("adminUnlockedArea");
+
+    if (user) {
+        adminUnlocked = user.uid === ADMIN_UID;
+
+        loginScreen.style.display = "none";
+        mainApp.style.display = "block";
+
+        if (adminUnlocked) {
+            adminArea.classList.remove("hidden");
+            document.getElementById("adminMessage").textContent =
+                "Administrator access enabled.";
+        } else {
+            adminArea.classList.add("hidden");
+        }
+
+        startStaffListener();
+      startPickerSync();
+      startLoadingSync();
+      startRouteLoadingSync();
+startVanDetailsSync();
+        renderEntries();
+        renderLoading();
+        renderRouteLoading();
+renderVanDetails();
+      startShiftHistorySync();
+    } else {
+        adminUnlocked = false;
+
+        loginScreen.style.display = "block";
+        mainApp.style.display = "none";
+        adminArea.classList.add("hidden");
+    }
+});
+function showAppTab(tabName) {
+
+    const tabSections = {
+        dashboard: [
+          
+            "Report Period",
+            "Overall Picking Dashboard",
+            "Store Performance Comparison",
+            "Freezer Leaderboard",
+            "Ambient Leaderboard",
+            "Chiller Leaderboard",
+            "Van Loading Performance"
+          
+        ],
+
+forecast: [
+    "Shift Planner Forecast",
+    "Report Period"
+],
+
+        picking: [
+            "Add Picker Record",
+            "Report Period"
+        ],
+
+        loading: [
+            "Individual Route Loading Timer",
+            "Van Loading Records",
+            "Report Period"
+        ],
+
+        routes: [
+            "Van Weight & Units",
+            "Individual Route Loading Results",
+            "Report Period"
+        ],
+
+        records: [
+            "Loading Records",
+            "Picker Results",
+            "Report Period"
+        ],
+
+        admin: [
+            "Admin Section",
+            "Report Period"
+        ],
+      history: [
+    "Shift History",
+    "Report Period"
+],
+    };
+
+    document.querySelectorAll("#mainApp .section").forEach(section => {
+        const heading = section.querySelector("h2");
+        const title = heading ? heading.textContent.trim() : "";
+
+        section.classList.toggle(
+            "hidden",
+            !tabSections[tabName] || !tabSections[tabName].includes(title)
+        );
+    });
+
+    document.querySelectorAll(".app-tabs button").forEach(button => {
+        button.classList.toggle(
+            "active",
+            button.getAttribute("onclick").includes("'" + tabName + "'")
+        );
+    });
+}
+
+// MAIN DASHBOARD
+
+function renderEntries() {
+    const filtered = getPeriodEntries();
+
+    const totalRoutes = filtered.reduce((sum, e) => sum + Number(e.routes), 0);
+    const totalUnits = filtered.reduce((sum, e) => sum + Number(e.units), 0);
+    const totalMinutes = filtered.reduce((sum, e) => sum + Number(e.minutes), 0);
+
+    const overallRate = totalMinutes > 0
+        ? totalUnits / totalMinutes * 60 : 0;
+
+    document.getElementById("totalEntries").textContent = filtered.length;
+    document.getElementById("totalRoutes").textContent = totalRoutes;
+    document.getElementById("totalUnits").textContent = totalUnits;
+    document.getElementById("overallRate").textContent = overallRate.toFixed(1);
+
+    const staff = groupPickerEntries(filtered);
+const topFreezer = staff
+    .filter(p => p.building === "Freezer")
+    .sort((a, b) => b.rate - a.rate)[0];
+
+const topAmbient = staff
+    .filter(p => p.building === "Ambient")
+    .sort((a, b) => b.rate - a.rate)[0];
+
+const topChiller = staff
+    .filter(p => p.building === "Chiller")
+    .sort((a, b) => b.rate - a.rate)[0];
+  document.getElementById("topFreezerPicker").textContent =
+    topFreezer ? topFreezer.name + " (" + topFreezer.rate.toFixed(1) + ")" : "-";
+
+document.getElementById("topAmbientPicker").textContent =
+    topAmbient ? topAmbient.name + " (" + topAmbient.rate.toFixed(1) + ")" : "-";
+
+document.getElementById("topChillerPicker").textContent =
+    topChiller ? topChiller.name + " (" + topChiller.rate.toFixed(1) + ")" : "-";
+    const freezerAverage = getStoreAverage(filtered, "Freezer");
+    const ambientAverage = getStoreAverage(filtered, "Ambient");
+    const chillerAverage = getStoreAverage(filtered, "Chiller");
+
+    document.getElementById("freezerAverage").textContent = freezerAverage.toFixed(1);
+    document.getElementById("ambientAverage").textContent = ambientAverage.toFixed(1);
+    document.getElementById("chillerAverage").textContent = chillerAverage.toFixed(1);
+
+    buildLeaderboard(staff.filter(p => p.building === "Freezer"),
+        "freezerLeaderboard", freezerAverage);
+
+    buildLeaderboard(staff.filter(p => p.building === "Ambient"),
+        "ambientLeaderboard", ambientAverage);
+
+    buildLeaderboard(staff.filter(p => p.building === "Chiller"),
+        "chillerLeaderboard", chillerAverage);
+
+    const sorted = [...filtered].sort((a, b) =>
+        b.date.localeCompare(a.date)
+    );
+
+    document.getElementById("deleteHeading").classList.toggle(
+        "hidden", !adminUnlocked
+    );
+
+    const results = document.getElementById("resultsTable");
+
+    if (sorted.length === 0) {
+        results.innerHTML =
+            `<tr><td colspan="${adminUnlocked ? 10 : 9}">No records for this period</td></tr>`;
+    } else {
+        results.innerHTML = sorted.map(e => {
+            const routes = Number(e.routes);
+            const rate = getRate(e);
+
+            const deleteCell = adminUnlocked
+                ? `<td>
+                    <button class="edit-button" onclick="editEntry('${String(e.id)}')">Edit</button>
+                    <button class="danger" onclick="deleteEntry('${String(e.id)}')">Delete</button>
+                   </td>`
+                : "";
+
+            return `
+            <tr>
+                <td>${escapeHTML(e.date)}</td>
+                <td>${escapeHTML(e.name)}</td>
+                <td>${escapeHTML(e.building || "Unassigned")}</td>
+                <td>${routes}</td>
+                <td>${e.units}</td>
+                <td>${e.minutes}</td>
+                <td>${routes > 0 ? (e.minutes / routes).toFixed(1) : 0}</td>
+                <td>${routes > 0 ? (e.units / routes).toFixed(1) : 0}</td>
+                <td>${rate.toFixed(1)}</td>
+                ${deleteCell}
+            </tr>`;
+        }).join("");
+    }
+
+    renderLoading();
+    renderRouteLoading();
+}
+
+function calculateShiftForecast() {
+
+    const $ = id => document.getElementById(id);
+
+    // 1. SHIFT INFORMATION
+
+    const date = $("forecastDate").value;
+    const shiftStart = $("forecastStart").value;
+    const targetFinish = $("forecastFinish").value;
+    const plannedLoading = $("forecastLoadingStart").value;
+    const breakTime = $("forecastBreakStart").value;
+
+const breakDuration = Number(
+    $("forecastBreakDuration").value
+);
+
+    const routes = Number($("forecastRoutes").value);
+    const unitsPerRoute = Number($("forecastUnitsPerRoute").value);
+
+    if (!date || !shiftStart || !targetFinish ||
+    !plannedLoading || !breakTime) {
+        alert("Please complete the shift date and all shift times.");
+        return;
+    }
+
+    if (routes <= 0 || unitsPerRoute <= 0 ||
+        !Number.isFinite(routes) || !Number.isFinite(unitsPerRoute)) {
+        alert("Please enter valid expected routes and average units per route.");
+        return;
+    }
+
+    if (!Number.isFinite(breakDuration) || breakDuration < 0) {
+        alert("Please enter a valid break duration.");
+        return;
+    }
+
+    // 2. HISTORICAL RECORDS
+
+    const pickingRecords =
+        Array.isArray(entries) ? entries : [];
+
+    const loadingRecords =
+        Array.isArray(loadingEntries) ? loadingEntries : [];
+
+
+    if (!pickingRecords.length) {
+        alert("There are no historical picking records available.");
+        return;
+    }
+
+    if (!loadingRecords.length) {
+        alert("There are no historical loading records available.");
+        return;
+    }
+
+    // 3. TIME CALCULATIONS
+
+    const clockMinutes = time => {
+        const parts = time.split(":").map(Number);
+        return parts[0] * 60 + parts[1];
+    };
+
+    const startMinutes = clockMinutes(shiftStart);
+
+    const shiftOffset = time => {
+        let result = clockMinutes(time) - startMinutes;
+        if (result < 0) result += 1440;
+        return result;
+    };
+
+    const breakStart = shiftOffset(breakTime);
+    const breakEnd = breakStart + breakDuration;
+    const loadingStart = shiftOffset(plannedLoading);
+
+    function addBreakToFinish(workMinutes) {
+        if (workMinutes > breakStart) {
+            return workMinutes + breakDuration;
+        }
+        return workMinutes;
+    }
+
+    const formatForecastTime = offset => {
+
+        if (!Number.isFinite(offset)) return "Unable to estimate";
+
+        const total = startMinutes + Math.round(offset);
+        const day = Math.floor(total / 1440);
+        const clock = ((total % 1440) + 1440) % 1440;
+
+        const hh = String(Math.floor(clock / 60)).padStart(2, "0");
+        const mm = String(clock % 60).padStart(2, "0");
+
+        return hh + ":" + mm +
+            (day > 0 ? " (+" + day + " day)" : "");
+    };
+
+    // 4. STAFF NUMBERS
+
+    const staffFields = [
+        "forecastFreezerPickers",
+        "forecastAmbientPickers",
+        "forecastChillerPickers",
+        "forecastFreezerLoaders",
+        "forecastAmbientLoaders",
+        "forecastExtraCount1",
+        "forecastExtraCount2",
+        "forecastExtraCount3"
+    ];
+
+    for (const id of staffFields) {
+        const value = Number($(id).value);
+
+        if (!Number.isInteger(value) || value < 0) {
+            alert("Please enter valid whole numbers for staff.");
+            return;
+        }
+    }
+
+    // 5. HISTORICAL PICKING PRODUCTIVITY
+
+    const picking = {
+        Freezer: { units: 0, minutes: 0 },
+        Ambient: { units: 0, minutes: 0 },
+        Chiller: { units: 0, minutes: 0 }
+    };
+
+    pickingRecords.forEach(record => {
+
+        const area = record.building;
+
+        if (!picking[area]) return;
+
+        const units = Number(record.units);
+        const minutes = Number(record.minutes);
+
+        if (units > 0 && minutes > 0) {
+            picking[area].units += units;
+            picking[area].minutes += minutes;
+        }
+    });
+
+    const historicalUnits =
+        picking.Freezer.units +
+        picking.Ambient.units +
+        picking.Chiller.units;
+
+    if (historicalUnits <= 0) {
+        alert("Historical picking records contain no usable units.");
+        return;
+    }
+
+    const totalExpectedUnits = routes * unitsPerRoute;
+
+    const areas = ["Freezer", "Ambient", "Chiller"];
+    const pickingForecast = {};
+
+    areas.forEach(area => {
+
+        const data = picking[area];
+        const share = data.units / historicalUnits;
+
+        const expectedUnits = totalExpectedUnits * share;
+
+        const hourlyRate = data.minutes > 0
+            ? data.units / data.minutes * 60
+            : 0;
+
+        const pickerCount = Number(
+            $("forecast" + area + "Pickers").value
+        );
+
+        let workMinutes;
+
+        if (expectedUnits <= 0) {
+            workMinutes = 0;
+        } else if (hourlyRate > 0 && pickerCount > 0) {
+            workMinutes =
+                expectedUnits / (hourlyRate * pickerCount) * 60;
+        } else {
+            workMinutes = Infinity;
+        }
+
+        pickingForecast[area] = {
+            share,
+            expectedUnits,
+            hourlyRate,
+            pickerCount,
+            workMinutes,
+            finish: Number.isFinite(workMinutes)
+                ? addBreakToFinish(workMinutes)
+                : Infinity
+        };
+    });
+
+    const freezerFinish = pickingForecast.Freezer.finish;
+    const ambientFinish = pickingForecast.Ambient.finish;
+    const chillerFinish = pickingForecast.Chiller.finish;
+
+    if (!Number.isFinite(freezerFinish) ||
+        !Number.isFinite(ambientFinish) ||
+        !Number.isFinite(chillerFinish)) {
+
+        alert("One or more picking areas need additional staff or historical productivity data.");
+        return;
+    }
+
+    // 6. SAME VANS AT BOTH SITES
+
+// Every route is one unique van.
+// Every van is loaded at Freezer and then Ambient.
+
+const expectedFrozenVans = routes;
+const expectedAmbientVans = routes;
+
+const frozenShare = 1;
+const ambientShare = 1;
+
+    // 7. HISTORICAL LOADING PRODUCTIVITY
+
+    const loadingRates = {
+        Frozen: { vans: 0, labourHours: 0 },
+        Ambient: { vans: 0, labourHours: 0 }
+    };
+
+    loadingRecords.forEach(record => {
+
+        const area = record.area;
+
+        if (!loadingRates[area]) return;
+
+        const vans = Number(record.vans);
+        const loaders = Number(record.loaders);
+        const minutes = Number(record.minutes);
+
+        if (vans > 0 && loaders > 0 && minutes > 0) {
+
+            loadingRates[area].vans += vans;
+
+            loadingRates[area].labourHours +=
+                loaders * minutes / 60;
+        }
+    });
+
+    const frozenRate = loadingRates.Frozen.labourHours > 0
+        ? loadingRates.Frozen.vans / loadingRates.Frozen.labourHours
+        : 0;
+
+    const ambientRate = loadingRates.Ambient.labourHours > 0
+        ? loadingRates.Ambient.vans / loadingRates.Ambient.labourHours
+        : 0;
+
+    if ((expectedFrozenVans > 0 && frozenRate <= 0) ||
+        (expectedAmbientVans > 0 && ambientRate <= 0)) {
+
+        alert("Historical loading speed is missing for a required area.");
+        return;
+    }
+
+    // 8. ADDITIONAL STAFF JOINING TIMES
+
+    const extraGroups = [];
+
+    for (let i = 1; i <= 3; i++) {
+
+        const count = Number($("forecastExtraCount" + i).value);
+        const area = $("forecastExtraArea" + i).value;
+        const time = $("forecastExtraTime" + i).value;
+
+        if (count > 0) {
+
+            if (!time) {
+                alert("Please enter the joining time for Additional Group " + i);
+                return;
+            }
+
+            extraGroups.push({
+                count,
+                area: area === "Freezer" ? "Frozen" : "Ambient",
+                time: shiftOffset(time)
+            });
+        }
+    }
+
+    // 9. ROLLING FREEZER TO AMBIENT LOADING SIMULATION
+
+function simulateRollingLoading(
+    totalVans,
+    frozenRate,
+    ambientRate,
+    start,
+    baseFreezerLoaders,
+    baseAmbientLoaders,
+    chillerJoin
+) {
+
+    if (totalVans <= 0) {
+        return {
+            frozenCompletion: start,
+            ambientCompletion: start
+        };
+    }
+
+    if (frozenRate <= 0 || ambientRate <= 0) {
+        return {
+            frozenCompletion: Infinity,
+            ambientCompletion: Infinity
+        };
+    }
+
+    let current = start;
+
+    let frozenDone = 0;
+    let ambientDone = 0;
+
+    // Work remaining on the van currently being loaded.
+    let frozenRemaining = 1;
+    let ambientRemaining = 1;
+
+    // Vans that have left Freezer and are waiting at Ambient.
+    let ambientQueue = 0;
+
+    let freezerLoaders = baseFreezerLoaders;
+    let ambientLoaders = baseAmbientLoaders;
+
+    let paused =
+        breakDuration > 0 &&
+        current >= breakStart &&
+        current < breakEnd;
+
+    let frozenCompletion = Infinity;
+    let ambientCompletion = Infinity;
+
+    const events = [];
+
+    // Break events.
+
+    if (breakDuration > 0) {
+
+        if (breakStart > start) {
+            events.push({
+                time: breakStart,
+                type: "breakStart"
+            });
+        }
+
+        if (breakEnd > start) {
+            events.push({
+                time: breakEnd,
+                type: "breakEnd"
+            });
+        }
+    }
+
+    // Additional staff joining.
+
+    extraGroups.forEach(group => {
+
+        const event = {
+            time: group.time,
+            type: "staff",
+            area: group.area,
+            count: group.count
+        };
+
+        if (group.time <= start) {
+
+            if (group.area === "Frozen") {
+                freezerLoaders += group.count;
+            } else {
+                ambientLoaders += group.count;
+            }
+
+        } else {
+            events.push(event);
+        }
+    });
+
+    // Chiller pickers join Ambient when Chiller picking finishes.
+
+    const chillerCount = Number(
+        $("forecastChillerPickers").value
+    );
+
+    if (chillerCount > 0) {
+
+        if (chillerJoin <= start) {
+            ambientLoaders += chillerCount;
+        } else {
+            events.push({
+                time: chillerJoin,
+                type: "chiller",
+                count: chillerCount
+            });
+        }
+    }
+
+    events.sort((a, b) => a.time - b.time);
+
+    let eventIndex = 0;
+
+    // Process events that occur at the current time.
+
+    function processEvents() {
+
+        while (
+            eventIndex < events.length &&
+            events[eventIndex].time <= current + 0.000001
+        ) {
+
+            const event = events[eventIndex];
+
+            if (event.type === "breakStart") {
+                paused = true;
+            }
+
+            if (event.type === "breakEnd") {
+                paused = false;
+            }
+
+            if (event.type === "staff") {
+
+                if (event.area === "Frozen") {
+                    freezerLoaders += event.count;
+                } else {
+                    ambientLoaders += event.count;
+                }
+            }
+
+            if (event.type === "chiller") {
+                ambientLoaders += event.count;
+            }
+
+            eventIndex++;
+        }
+    }
+
+    // Run both loading stages together.
+
+    let safety = 0;
+
+    while (ambientDone < totalVans && safety < 100000) {
+
+        safety++;
+
+        processEvents();
+
+        const freezerRatePerMinute =
+            !paused && freezerLoaders > 0 && frozenDone < totalVans
+                ? freezerLoaders * frozenRate / 60
+                : 0;
+
+        const ambientRatePerMinute =
+            !paused && ambientLoaders > 0 && ambientQueue > 0
+                ? ambientLoaders * ambientRate / 60
+                : 0;
+
+        // Time until the next Freezer van is ready.
+
+        const timeToFrozen =
+            freezerRatePerMinute > 0
+                ? frozenRemaining / freezerRatePerMinute
+                : Infinity;
+
+        // Time until the next Ambient van is ready.
+
+        const timeToAmbient =
+            ambientRatePerMinute > 0
+                ? ambientRemaining / ambientRatePerMinute
+                : Infinity;
+
+        // Time until the next staff or break event.
+
+        const nextEvent =
+            eventIndex < events.length
+                ? events[eventIndex].time
+                : Infinity;
+
+        const timeToEvent = nextEvent - current;
+
+        const elapsed = Math.min(
+            timeToFrozen,
+            timeToAmbient,
+            timeToEvent
+        );
+
+        // No staff and no future event means the work cannot finish.
+
+        if (!Number.isFinite(elapsed)) {
+            return {
+                frozenCompletion: Infinity,
+                ambientCompletion: Infinity
+            };
+        }
+
+        if (elapsed < 0) {
+            return {
+                frozenCompletion: Infinity,
+                ambientCompletion: Infinity
+            };
+        }
+
+        // Advance Freezer loading.
+
+        if (freezerRatePerMinute > 0) {
+            frozenRemaining -=
+                freezerRatePerMinute * elapsed;
+        }
+
+        // Advance Ambient loading.
+
+        if (ambientRatePerMinute > 0) {
+            ambientRemaining -=
+                ambientRatePerMinute * elapsed;
+        }
+
+        current += elapsed;
+
+        // A van has finished at Freezer.
+        // It immediately joins the Ambient queue.
+
+        if (
+            frozenDone < totalVans &&
+            frozenRemaining <= 0.000001
+        ) {
+
+            frozenDone++;
+
+            ambientQueue++;
+
+            frozenRemaining = 1;
+
+            if (frozenDone === totalVans) {
+                frozenCompletion = current;
+            }
+        }
+
+        // A van has finished at Ambient.
+
+        if (
+            ambientQueue > 0 &&
+            ambientRemaining <= 0.000001
+        ) {
+
+            ambientDone++;
+
+            ambientQueue--;
+
+            ambientRemaining = 1;
+
+            if (ambientDone === totalVans) {
+                ambientCompletion = current;
+            }
+        }
+
+        // Prevent a loop if no progress is possible.
+
+        if (
+            elapsed === 0 &&
+            timeToFrozen > 0 &&
+            timeToAmbient > 0 &&
+            timeToEvent > 0
+        ) {
+            return {
+                frozenCompletion: Infinity,
+                ambientCompletion: Infinity
+            };
+        }
+    }
+
+    if (safety >= 100000 || ambientDone < totalVans) {
+        return {
+            frozenCompletion: Infinity,
+            ambientCompletion: Infinity
+        };
+    }
+
+    return {
+        frozenCompletion,
+        ambientCompletion
+    };
+}
+    
+// 10. CALCULATE ROLLING COMPLETION TIMES
+
+const freezerLoaders = Number(
+    $("forecastFreezerLoaders").value
+);
+
+const ambientLoaders = Number(
+    $("forecastAmbientLoaders").value
+);
+
+// Both sites begin at the planned loading start.
+// Ambient receives each van as soon as Freezer finishes it.
+
+const freezerLoadingStart = loadingStart;
+const ambientLoadingStart = loadingStart;
+
+const loadingResult = simulateRollingLoading(
+    routes,
+    frozenRate,
+    ambientRate,
+    loadingStart,
+    freezerLoaders,
+    ambientLoaders,
+    chillerFinish
+);
+
+const frozenCompletion = loadingResult.frozenCompletion;
+const ambientCompletion = loadingResult.ambientCompletion;
+
+// Overall completion includes all picking and both loading stages.
+
+const overallCompletion = Math.max(
+    freezerFinish,
+    ambientFinish,
+    chillerFinish,
+    frozenCompletion,
+    ambientCompletion
+);
+// DISPLAY PLANNED BREAK
+
+$("forecastBreakResults").innerHTML = `
+    <div class="stat">
+        Planned Team Break
+
+        <strong>
+            ${formatForecastTime(breakStart)}
+            - ${formatForecastTime(breakEnd)}
+        </strong>
+
+        ${breakDuration} minutes
+    </div>
+`;
+    // 11. DISPLAY BREAK INFORMATION
+
+    $("forecastBreakResults").innerHTML = `
+        <div class="stat">
+            Planned Team Break
+
+            <strong>
+                ${formatForecastTime(breakStart)}
+                -
+                ${formatForecastTime(breakEnd)}
+            </strong>
+
+            ${breakDuration} minutes
+        </div>
+    `;
+
+    // 12. DISPLAY PICKING RESULTS
+
+    let pickingHTML = "";
+
+    areas.forEach(area => {
+
+        const result = pickingForecast[area];
+
+        pickingHTML += `
+            <div class="stat">
+                ${area} Picking
+
+                <strong>
+                    ${Math.round(result.expectedUnits).toLocaleString()} units
+                </strong>
+
+                ${result.pickerCount} pickers
+
+                <br>
+
+                ${result.hourlyRate.toFixed(1)} units/hour per picker
+
+                <br>
+
+                Estimated finish:
+                <strong>
+                    ${formatForecastTime(result.finish)}
+                </strong>
+            </div>
+        `;
+    });
+
+    $("forecastPickingResults").innerHTML = pickingHTML;
+
+    // 13. DISPLAY LOADING RESULTS
+
+    $("forecastLoadingResults").innerHTML = `
+
+        <div class="stat">
+            Frozen Loading
+
+            <strong>${routes} vans</strong>
+
+            ${freezerLoaders} initial loaders
+
+            <br>
+
+            ${(frozenRate * freezerLoaders).toFixed(2)} predicted vans per hour
+
+            <br>
+
+            Estimated start:
+            ${formatForecastTime(freezerLoadingStart)}
+
+            <br>
+
+            Estimated finish:
+            <strong>
+                ${formatForecastTime(frozenCompletion)}
+            </strong>
+        </div>
+
+        <div class="stat">
+            Ambient Loading
+
+            <strong>${routes} vans</strong>
+
+            ${ambientLoaders} initial loaders
+
+            <br>
+
+            ${(ambientRate * ambientLoaders).toFixed(2)} predicted vans per hour
+
+            <br>
+
+            Chiller picker joins:
+            ${formatForecastTime(chillerFinish)}
+
+            <br>
+
+            Estimated start:
+            ${formatForecastTime(ambientLoadingStart)}
+
+            <br>
+
+            Estimated finish:
+            <strong>
+                ${formatForecastTime(ambientCompletion)}
+            </strong>
+        </div>
+    `;
+
+    // 14. OVERALL COMPLETION
+
+    $("forecastCompletion").textContent =
+        formatForecastTime(overallCompletion);
+
+    const target = shiftOffset(targetFinish);
+
+    let summary = `
+        Expected workload: ${routes} routes and
+        ${totalExpectedUnits.toLocaleString()} units.
+    `;
+
+    if (!Number.isFinite(overallCompletion)) {
+
+        summary +=
+            " There are not enough loaders scheduled to complete all loading work.";
+
+    } else if (overallCompletion <= target) {
+
+        const spare = Math.round(target - overallCompletion);
+
+        summary +=
+            " The forecast finishes approximately " +
+            spare + " minutes before your target finish.";
+
+    } else {
+
+        const late = Math.round(overallCompletion - target);
+
+        summary +=
+            " The forecast finishes approximately " +
+            late + " minutes after ayour target finish.";
+    }
+
+    $("forecastSummary").textContent = summary;
+
+        $("forecastResults").classList.remove("hidden");
+
+} // END calculateShiftForecast()
+
+
+// START APP
+
+renderPickerDropdown();
+restoreRouteTimer();
+renderEntries();
+</script>
+</body>
+</html>
