@@ -1,0 +1,16 @@
+{
+  "name": "Warehouse Performance App",
+  "short_name": "Warehouse App",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#10243a",
+  "theme_color": "#10243a",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
