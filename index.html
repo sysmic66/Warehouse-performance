@@ -2797,6 +2797,7 @@ function lockAdmin() {
 
 // AUTHENTICATION LISTENER
 auth.onAuthStateChanged(user => {
+  console.log("AUTH LISTENER STARTED");
     currentUser = user;
   console.log("AUTH STATE CHANGED:", user);
   document.getElementById("loginMessage").textContent =
