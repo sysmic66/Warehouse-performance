@@ -839,6 +839,7 @@ let staffUnsubscribe = null;
 let pickerUnsubscribe = null;
   let loadingUnsubscribe = null;
   let routeLoadingUnsubscribe = null;
+    let activeRouteTimerUnsubscribe = null;
   let shiftHistoryEntries = [];
 let shiftHistoryUnsubscribe = null;
 
@@ -1594,15 +1595,100 @@ function saveVanDetailsEntries() {
     );
 }
 function saveActiveRouteTimer() {
-    if (activeRouteTimer) {
-        localStorage.setItem(
-            "activeRouteTimer",
-            JSON.stringify(activeRouteTimer)
-        );
-    } else {
-        localStorage.removeItem("activeRouteTimer");
+    const timers = activeRouteTimer || {
+        Frozen: null,
+        Ambient: null
+    };
+
+    localStorage.setItem(
+        "activeRouteTimer",
+        JSON.stringify(timers)
+    );
+
+    if (currentUser) {
+        db.collection("activeRouteTimers")
+            .doc("current")
+            .set({ timers: timers })
+            .catch(error => {
+                console.error("Could not sync active timers:", error);
+            });
     }
 }
+    function startActiveRouteTimerSync() {
+    const timerRef = db.collection("activeRouteTimers").doc("current");
+
+    timerRef.get().then(doc => {
+        if (!doc.exists) {
+            return timerRef.set({
+                timers: activeRouteTimer || {
+                    Frozen: null,
+                    Ambient: null
+                }
+            });
+        }
+    }).then(() => {
+        if (activeRouteTimerUnsubscribe) {
+            activeRouteTimerUnsubscribe();
+        }
+
+        activeRouteTimerUnsubscribe = timerRef.onSnapshot(doc => {
+            if (!doc.exists) return;
+
+            const data = doc.data();
+
+            activeRouteTimer = data.timers || {
+                Frozen: null,
+                Ambient: null
+            };
+
+            localStorage.setItem(
+                "activeRouteTimer",
+                JSON.stringify(activeRouteTimer)
+            );
+
+            ["Frozen", "Ambient"].forEach(area => {
+                const timer = activeRouteTimer[area];
+                const elements = getRouteTimerElements(area);
+
+                if (timer) {
+                    elements.date.value = timer.date;
+                    elements.number.value = timer.routeNumber;
+                    elements.loaders.value = timer.loaders;
+
+                    elements.date.disabled = true;
+                    elements.number.disabled = true;
+                    elements.loaders.disabled = true;
+
+                    updateRouteTimerDisplay(area);
+
+                    if (!timerInterval[area]) {
+                        timerInterval[area] = setInterval(() => {
+                            updateRouteTimerDisplay(area);
+                        }, 1000);
+                    }
+                } else {
+                    if (timerInterval[area]) {
+                        clearInterval(timerInterval[area]);
+                        timerInterval[area] = null;
+                    }
+
+                    elements.date.disabled = false;
+                    elements.number.disabled = false;
+                    elements.loaders.disabled = false;
+                    elements.display.textContent = "00:00:00";
+                }
+
+                updateRouteTimerButtons(area);
+            });
+
+        }, error => {
+            console.error("Live timer sync error:", error);
+        });
+
+    }).catch(error => {
+        console.error("Could not start live timer sync:", error);
+    });
+    }
 
 // STAFF MANAGEMENT - FIRESTORE
 
@@ -3014,6 +3100,7 @@ auth.onAuthStateChanged(user => {
       startPickerSync();
       startLoadingSync();
       startRouteLoadingSync();
+      startActiveRouteTimerSync();
 startVanDetailsSync();
         renderEntries();
         renderLoading();
