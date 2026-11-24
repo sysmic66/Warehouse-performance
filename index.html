@@ -517,17 +517,14 @@ Sign Out
     <div class="table-wrap">
         <table>
             <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Routes</th>
-                    <th>Weight (kg)</th>
-                    <th>Planned Staff</th>
-                    <th>Actual Staff</th>
-                    <th>Break</th>
-                    <th>Planned Finish</th>
-                    <th>Actual Finish</th>
-                    <th id="historyActionsHeading" class="hidden">Actions</th>
-                </tr>
+<tr>
+<th>Date</th>
+<th>Route</th>
+<th>Freezer Load Time</th>
+<th>Ambient Load Time</th>
+<th>Status</th>
+<th id="routeDeleteHeading" class="hidden">Actions</th>
+</tr>
             </thead>
             <tbody id="shiftHistoryResults"></tbody>
         </table>
@@ -645,13 +642,13 @@ Sign Out
 <h2>Individual Route Loading Results</h2>
 
 <div class="cards">
-<div class="stat">Completed Routes<strong id="routeTotalCount">0</strong></div>
+<div class="stat">Routes Recorded<strong id="routeTotalCount">0</strong></div>
 <div class="stat">Average Minutes/Route<strong id="routeAverageMinutes">0</strong></div>
 <div class="stat">Frozen Average<strong id="routeFrozenAverage">0</strong></div>
 <div class="stat">Ambient Average<strong id="routeAmbientAverage">0</strong></div>
 </div>
 
-<p class="small">These results use the individual route timer, not the manual loading records.</p>
+<p class="small">These results show each van route once, with its Freezer and Ambient loading times.</p>
 
 <div class="table-wrap">
 <table>
@@ -659,14 +656,9 @@ Sign Out
 <tr>
 <th>Date</th>
 <th>Route</th>
-<th>Area</th>
-<th>Loaders</th>
-<th>Started</th>
-<th>Finished</th>
-<th>Minutes</th>
-<th>Weight (kg)</th>
-<th>Units</th>
-<th>Minutes per 1,000 kg</th>
+<th>Freezer Load Time</th>
+<th>Ambient Load Time</th>
+<th>Status</th>
 <th id="routeDeleteHeading" class="hidden">Actions</th>
 </tr>
 </thead>
@@ -2162,72 +2154,85 @@ function finishRouteTimer(area) {
     const finishedAt = Date.now();
     const durationMs = finishedAt - activeTimer.startedAt;
 
-    const record = {
-        id: Date.now(),
-        date: activeTimer.date,
-        area: activeTimer.area,
-        routeNumber: activeTimer.routeNumber,
-        loaders: activeTimer.loaders,
+    const date = activeTimer.date;
+    const routeNumber = activeTimer.routeNumber;
+    const recordId = date + "_" + routeNumber;
+
+    const areaKey = area === "Frozen" ? "frozen" : "ambient";
+    const otherKey = area === "Frozen" ? "ambient" : "frozen";
+
+    const areaRecord = {
         startedAt: activeTimer.startedAt,
         finishedAt: finishedAt,
         durationMs: durationMs,
-        minutes: durationMs / 60000
+        minutes: durationMs / 60000,
+        loaders: activeTimer.loaders
     };
 
     elements.finish.disabled = true;
     elements.status.textContent = "Saving route...";
 
-    db.collection("routeLoadingEntries")
-        .doc(String(record.id))
-        .set(record)
-        .then(() => {
-            routeLoadingEntries.push(record);
+    const routeRef = db.collection("routeLoadingEntries")
+        .doc(recordId);
 
-            localStorage.setItem(
-                "routeLoadingEntries",
-                JSON.stringify(routeLoadingEntries)
-            );
+    db.runTransaction(async transaction => {
+        const doc = await transaction.get(routeRef);
+        const existing = doc.exists ? doc.data() : {};
 
-            activeRouteTimer[area] = null;
-            saveActiveRouteTimer();
+        transaction.set(routeRef, {
+            id: recordId,
+            date: date,
+            routeNumber: routeNumber,
+            [areaKey]: areaRecord
+        }, { merge: true });
 
-            if (timerInterval[area]) {
-                clearInterval(timerInterval[area]);
-                timerInterval[area] = null;
-            }
+        return !!existing[otherKey];
+    }).then(otherAlreadyComplete => {
 
-            elements.date.value = "";
-            elements.number.value = "";
-            elements.loaders.value = "";
+        activeRouteTimer[area] = null;
+        saveActiveRouteTimer();
 
-            elements.display.textContent = "00:00:00";
-            elements.status.textContent = "Route completed";
+        if (timerInterval[area]) {
+            clearInterval(timerInterval[area]);
+            timerInterval[area] = null;
+        }
 
-            elements.date.disabled = false;
-            elements.number.disabled = false;
-            elements.loaders.disabled = false;
+        elements.date.value = "";
+        elements.number.value = "";
+        elements.loaders.value = "";
 
-            if (elements.areaSelect) {
-                elements.areaSelect.disabled = false;
-                elements.areaSelect.value = "Frozen";
-            }
+        elements.display.textContent = "00:00:00";
+        elements.status.textContent = otherAlreadyComplete
+            ? "Both sites complete"
+            : "Saved - waiting for other site";
 
-            updateRouteTimerButtons(area);
+        elements.date.disabled = false;
+        elements.number.disabled = false;
+        elements.loaders.disabled = false;
 
-            document.getElementById("filterDate").value = record.date;
+        if (elements.areaSelect) {
+            elements.areaSelect.disabled = false;
+            elements.areaSelect.value = "Frozen";
+        }
 
-                        renderEntries();
+        updateRouteTimerButtons(area);
 
-            alert("Route loading record saved successfully.");
+        document.getElementById("filterDate").value = date;
 
-        }, error => {
-            console.error("Error saving route loading record:", error);
+        renderEntries();
 
-            elements.finish.disabled = false;
-            elements.status.textContent = "Save failed - route still active";
+        alert(otherAlreadyComplete
+            ? "Route saved. Both sites are complete."
+            : "Loading time saved. Waiting for the other site.");
 
-            alert("Could not save the route record. Your timer has been kept. Please try again.");
-        });
+    }).catch(error => {
+        console.error("Error saving combined route:", error);
+
+        elements.finish.disabled = false;
+        elements.status.textContent = "Save failed - route still active";
+
+        alert("Could not save the route record. Your timer has been kept. Please try again.");
+    });
 }
 
 function formatDuration(milliseconds) {
@@ -2627,24 +2632,38 @@ function renderLoading() {
 function renderRouteLoading() {
     const filtered = getPeriodRouteLoading();
 
-    const frozen = filtered.filter(e => e.area === "Frozen");
-    const ambient = filtered.filter(e => e.area === "Ambient");
+    const frozenTimes = [];
+    const ambientTimes = [];
 
-    const total = filtered.length;
+    filtered.forEach(e => {
+        if (e.frozen && e.frozen.minutes != null) {
+            frozenTimes.push(Number(e.frozen.minutes));
+        } else if (e.area === "Frozen") {
+            frozenTimes.push(Number(e.minutes));
+        }
 
-    const average = total > 0
-        ? filtered.reduce((sum, e) => sum + Number(e.minutes), 0) / total
+        if (e.ambient && e.ambient.minutes != null) {
+            ambientTimes.push(Number(e.ambient.minutes));
+        } else if (e.area === "Ambient") {
+            ambientTimes.push(Number(e.minutes));
+        }
+    });
+
+    const allTimes = [...frozenTimes, ...ambientTimes];
+
+    const average = allTimes.length
+        ? allTimes.reduce((sum, value) => sum + value, 0) / allTimes.length
         : 0;
 
-    const frozenAverage = frozen.length > 0
-        ? frozen.reduce((sum, e) => sum + Number(e.minutes), 0) / frozen.length
+    const frozenAverage = frozenTimes.length
+        ? frozenTimes.reduce((sum, value) => sum + value, 0) / frozenTimes.length
         : 0;
 
-    const ambientAverage = ambient.length > 0
-        ? ambient.reduce((sum, e) => sum + Number(e.minutes), 0) / ambient.length
+    const ambientAverage = ambientTimes.length
+        ? ambientTimes.reduce((sum, value) => sum + value, 0) / ambientTimes.length
         : 0;
 
-    document.getElementById("routeTotalCount").textContent = total;
+    document.getElementById("routeTotalCount").textContent = filtered.length;
     document.getElementById("routeAverageMinutes").textContent =
         average.toFixed(1) + " min";
     document.getElementById("routeFrozenAverage").textContent =
@@ -2656,53 +2675,65 @@ function renderRouteLoading() {
         "hidden", !adminUnlocked
     );
 
-    const sorted = [...filtered].sort((a, b) =>
-        b.startedAt - a.startedAt
-    );
+    const sorted = [...filtered].sort((a, b) => {
+        const aTime = Math.max(
+            a.frozen?.finishedAt || a.finishedAt || 0,
+            a.ambient?.finishedAt || a.finishedAt || 0
+        );
+        const bTime = Math.max(
+            b.frozen?.finishedAt || b.finishedAt || 0,
+            b.ambient?.finishedAt || b.finishedAt || 0
+        );
+        return bTime - aTime;
+    });
 
     const tbody = document.getElementById("routeLoadingResults");
 
     if (sorted.length === 0) {
         tbody.innerHTML =
-            `<tr><td colspan="${adminUnlocked ? 11 : 10}">No completed route records for this period</td></tr>`;
+            `<tr><td colspan="${adminUnlocked ? 6 : 5}">No route records for this period</td></tr>`;
         return;
     }
 
     tbody.innerHTML = sorted.map(e => {
+        let frozenMinutes = null;
+        let ambientMinutes = null;
+
+        if (e.frozen) {
+            frozenMinutes = Number(e.frozen.minutes);
+        } else if (e.area === "Frozen") {
+            frozenMinutes = Number(e.minutes);
+        }
+
+        if (e.ambient) {
+            ambientMinutes = Number(e.ambient.minutes);
+        } else if (e.area === "Ambient") {
+            ambientMinutes = Number(e.minutes);
+        }
+
+        const hasFrozen = frozenMinutes !== null && Number.isFinite(frozenMinutes);
+        const hasAmbient = ambientMinutes !== null && Number.isFinite(ambientMinutes);
+
+        const status = hasFrozen && hasAmbient
+            ? "Both sites complete"
+            : "Waiting for other site";
+
         const deleteCell = adminUnlocked
-    ? `<td>
-        <button class="edit-button" onclick="editRouteLoading('${String(e.id)}')">Edit</button>
-        <button class="danger" onclick="deleteRouteLoading('${String(e.id)}')">Delete</button>
-       </td>`
-    : "";
+            ? `<td>
+                <button class="edit-button" onclick="editRouteLoading('${String(e.id)}')">Edit</button>
+                <button class="danger" onclick="deleteRouteLoading('${String(e.id)}')">Delete</button>
+               </td>`
+            : "";
 
-const vanDetails = vanDetailsEntries.find(v =>
-    String(v.date) === String(e.date) &&
-    v.area === e.area &&
-    String(v.route) === String(e.routeNumber)
-);
-
-const weight = vanDetails ? Number(vanDetails.weight) : 0;
-const units = vanDetails ? Number(vanDetails.units) : 0;
-
-const minutesPer1000Kg = weight > 0
-    ? (Number(e.minutes) / weight) * 1000
-    : null;
-
-return `
-<tr>
-    <td>${escapeHTML(e.date)}</td>
-    <td>${escapeHTML(e.routeNumber)}</td>
-    <td>${escapeHTML(e.area)}</td>
-    <td>${e.loaders}</td>
-    <td>${formatClock(e.startedAt)}</td>
-    <td>${formatClock(e.finishedAt)}</td>
-    <td>${Number(e.minutes).toFixed(1)}</td>
-    <td>${weight > 0 ? weight.toLocaleString("en-GB") : "-"}</td>
-    <td>${units > 0 ? units.toLocaleString("en-GB") : "-"}</td>
-    <td>${minutesPer1000Kg !== null ? minutesPer1000Kg.toFixed(1) : "-"}</td>
-    ${deleteCell}
-</tr>`;
+        return `
+        <tr>
+            <td>${escapeHTML(e.date)}</td>
+            <td>${escapeHTML(e.routeNumber)}</td>
+            <td>${hasFrozen ? frozenMinutes.toFixed(1) + " min" : "Pending"}</td>
+            <td>${hasAmbient ? ambientMinutes.toFixed(1) + " min" : "Pending"}</td>
+            <td>${status}</td>
+            ${deleteCell}
+        </tr>`;
     }).join("");
 }
 
@@ -2820,6 +2851,65 @@ function editRouteLoading(id) {
     const e = routeLoadingEntries.find(x => String(x.id) === String(id));
     if (!e) return;
 
+    // NEW COMBINED ROUTE RECORD
+    if (e.frozen || e.ambient) {
+        const updates = {};
+
+        if (e.frozen) {
+            const minutes = prompt(
+                "Enter Freezer loading time in minutes:",
+                Number(e.frozen.minutes).toFixed(1)
+            );
+
+            if (minutes === null) return;
+
+            if (!Number.isFinite(Number(minutes)) || Number(minutes) <= 0) {
+                alert("Invalid Freezer time. No changes have been saved.");
+                return;
+            }
+
+            const durationMs = Number(minutes) * 60000;
+
+            updates["frozen.minutes"] = Number(minutes);
+            updates["frozen.durationMs"] = durationMs;
+            updates["frozen.finishedAt"] = e.frozen.startedAt + durationMs;
+        }
+
+        if (e.ambient) {
+            const minutes = prompt(
+                "Enter Ambient loading time in minutes:",
+                Number(e.ambient.minutes).toFixed(1)
+            );
+
+            if (minutes === null) return;
+
+            if (!Number.isFinite(Number(minutes)) || Number(minutes) <= 0) {
+                alert("Invalid Ambient time. No changes have been saved.");
+                return;
+            }
+
+            const durationMs = Number(minutes) * 60000;
+
+            updates["ambient.minutes"] = Number(minutes);
+            updates["ambient.durationMs"] = durationMs;
+            updates["ambient.finishedAt"] = e.ambient.startedAt + durationMs;
+        }
+
+        db.collection("routeLoadingEntries")
+            .doc(String(id))
+            .update(updates)
+            .then(() => {
+                alert("Combined route record updated.");
+            })
+            .catch(error => {
+                console.error("Route loading update error:", error);
+                alert("Could not update route record: " + error.message);
+            });
+
+        return;
+    }
+
+    // EXISTING LEGACY RECORD
     const date = prompt("Enter date (YYYY-MM-DD):", e.date);
     if (date === null) return;
 
