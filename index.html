@@ -2234,8 +2234,7 @@ function finishRouteTimer(area) {
         elements.finish.disabled = false;
         elements.status.textContent = "Save failed - route still active";
 
-        alert("Could not save the route record. Your timer has been kept. Please try again.");
-    });
+        alert("SAVE ERROR: " + error.code + " - " + error.message);
 }
 
 function formatDuration(milliseconds) {
