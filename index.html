@@ -2225,7 +2225,7 @@ function finishRouteTimer(area) {
             ? "Route saved. Both sites are complete."
             : "Loading time saved. Waiting for the other site.");
 
-    }).catch(error => {
+        }, error => {
         console.error("Error saving combined route:", error);
 
         elements.finish.disabled = false;
