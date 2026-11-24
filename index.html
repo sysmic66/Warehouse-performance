@@ -1876,20 +1876,89 @@ function addLoading(area) {
         });
 }
 
-        
 
-// INDIVIDUAL ROUTE TIMER
+// INDIVIDUAL ROUTE TIMER - TWO INDEPENDENT TIMERS
 
-function startRouteTimer() {
-    if (activeRouteTimer) {
-        alert("A route timer is already running. Finish that route first.");
+// Convert an existing single active timer to the new structure.
+if (
+    activeRouteTimer &&
+    !("Frozen" in activeRouteTimer || "Ambient" in activeRouteTimer)
+) {
+    const oldTimer = activeRouteTimer;
+
+    activeRouteTimer = {
+        Frozen: null,
+        Ambient: null
+    };
+
+    activeRouteTimer[
+        oldTimer.area === "Ambient" ? "Ambient" : "Frozen"
+    ] = oldTimer;
+
+} else if (!activeRouteTimer) {
+    activeRouteTimer = {
+        Frozen: null,
+        Ambient: null
+    };
+}
+
+timerInterval = {
+    Frozen: null,
+    Ambient: null
+};
+
+saveActiveRouteTimer();
+
+function getRouteTimerElements(area) {
+    const prefix = area === "Ambient" ? "ambient" : "frozen";
+
+    const panelDate = document.getElementById(prefix + "RouteDate");
+
+    if (panelDate) {
+        const buttonPrefix = area === "Ambient" ? "Ambient" : "Frozen";
+
+        return {
+            date: panelDate,
+            number: document.getElementById(prefix + "RouteNumber"),
+            loaders: document.getElementById(prefix + "RouteLoaders"),
+            status: document.getElementById(prefix + "TimerStatus"),
+            display: document.getElementById(prefix + "TimerDisplay"),
+            start: document.getElementById("start" + buttonPrefix + "RouteButton"),
+            finish: document.getElementById("finish" + buttonPrefix + "RouteButton"),
+            details: document.getElementById(prefix + "ActiveRouteDetails"),
+            areaSelect: null
+        };
+    }
+
+    return {
+        date: document.getElementById("routeDate"),
+        number: document.getElementById("routeNumber"),
+        loaders: document.getElementById("routeLoaders"),
+        status: document.getElementById("timerStatus"),
+        display: document.getElementById("timerDisplay"),
+        start: document.getElementById("startRouteButton"),
+        finish: document.getElementById("finishRouteButton"),
+        details: document.getElementById("activeRouteDetails"),
+        areaSelect: document.getElementById("routeArea")
+    };
+}
+
+function startRouteTimer(area) {
+    const legacyAreaSelect = document.getElementById("routeArea");
+
+    area = area || (legacyAreaSelect ? legacyAreaSelect.value : "Frozen");
+    area = area === "Ambient" ? "Ambient" : "Frozen";
+
+    const elements = getRouteTimerElements(area);
+
+    if (activeRouteTimer[area]) {
+        alert("A " + area + " route timer is already running.");
         return;
     }
 
-    const date = document.getElementById("routeDate").value;
-    const area = document.getElementById("routeArea").value;
-    const routeNumber = document.getElementById("routeNumber").value.trim();
-    const loaders = Number(document.getElementById("routeLoaders").value);
+    const date = elements.date.value;
+    const routeNumber = elements.number.value.trim();
+    const loaders = Number(elements.loaders.value);
 
     if (!date) {
         alert("Please select a date.");
@@ -1906,7 +1975,7 @@ function startRouteTimer() {
         return;
     }
 
-    activeRouteTimer = {
+    activeRouteTimer[area] = {
         id: Date.now() + Math.random(),
         date: date,
         area: area,
@@ -1917,69 +1986,99 @@ function startRouteTimer() {
 
     saveActiveRouteTimer();
 
-    document.getElementById("routeNumber").disabled = true;
-    document.getElementById("routeLoaders").disabled = true;
-    document.getElementById("routeArea").disabled = true;
-    document.getElementById("routeDate").disabled = true;
+    elements.date.disabled = true;
+    elements.number.disabled = true;
+    elements.loaders.disabled = true;
 
-    updateRouteTimerDisplay();
-    updateRouteTimerButtons();
+    if (elements.areaSelect) {
+        elements.areaSelect.disabled = true;
+    }
 
-    if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(updateRouteTimerDisplay, 1000);
+    updateRouteTimerDisplay(area);
+    updateRouteTimerButtons(area);
+
+    if (timerInterval[area]) {
+        clearInterval(timerInterval[area]);
+    }
+
+    timerInterval[area] = setInterval(function () {
+        updateRouteTimerDisplay(area);
+    }, 1000);
 }
 
-function finishRouteTimer() {
-    if (!activeRouteTimer) return;
+function finishRouteTimer(area) {
+    const legacyAreaSelect = document.getElementById("routeArea");
+
+    if (!area) {
+        if (legacyAreaSelect) {
+            area = legacyAreaSelect.value;
+        } else {
+            area = activeRouteTimer.Frozen ? "Frozen" : "Ambient";
+        }
+    }
+
+    area = area === "Ambient" ? "Ambient" : "Frozen";
+
+    const activeTimer = activeRouteTimer[area];
+
+    if (!activeTimer) return;
+
+    const elements = getRouteTimerElements(area);
 
     const finishedAt = Date.now();
-    const durationMs = finishedAt - activeRouteTimer.startedAt;
-    const minutes = durationMs / 60000;
+    const durationMs = finishedAt - activeTimer.startedAt;
 
     const record = {
         id: Date.now(),
-        date: activeRouteTimer.date,
-        area: activeRouteTimer.area,
-        routeNumber: activeRouteTimer.routeNumber,
-        loaders: activeRouteTimer.loaders,
-        startedAt: activeRouteTimer.startedAt,
+        date: activeTimer.date,
+        area: activeTimer.area,
+        routeNumber: activeTimer.routeNumber,
+        loaders: activeTimer.loaders,
+        startedAt: activeTimer.startedAt,
         finishedAt: finishedAt,
         durationMs: durationMs,
-        minutes: minutes
+        minutes: durationMs / 60000
     };
 
-    document.getElementById("finishRouteButton").disabled = true;
-    document.getElementById("timerStatus").textContent = "Saving route...";
+    elements.finish.disabled = true;
+    elements.status.textContent = "Saving route...";
 
     db.collection("routeLoadingEntries")
         .doc(String(record.id))
         .set(record)
         .then(() => {
             routeLoadingEntries.push(record);
-            localStorage.setItem("routeLoadingEntries", JSON.stringify(routeLoadingEntries));
 
-            activeRouteTimer = null;
-            localStorage.removeItem("activeRouteTimer");
+            localStorage.setItem(
+                "routeLoadingEntries",
+                JSON.stringify(routeLoadingEntries)
+            );
 
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
+            activeRouteTimer[area] = null;
+            saveActiveRouteTimer();
+
+            if (timerInterval[area]) {
+                clearInterval(timerInterval[area]);
+                timerInterval[area] = null;
             }
 
-            document.getElementById("routeDate").value = "";
-            document.getElementById("routeArea").value = "Frozen";
-            document.getElementById("routeNumber").value = "";
-            document.getElementById("routeLoaders").value = "";
+            elements.date.value = "";
+            elements.number.value = "";
+            elements.loaders.value = "";
 
-            document.getElementById("timerDisplay").textContent = "00:00:00";
-            document.getElementById("timerStatus").textContent = "Route completed";
+            elements.display.textContent = "00:00:00";
+            elements.status.textContent = "Route completed";
 
-            document.getElementById("routeDate").disabled = false;
-            document.getElementById("routeArea").disabled = false;
-            document.getElementById("routeNumber").disabled = false;
-            document.getElementById("routeLoaders").disabled = false;
+            elements.date.disabled = false;
+            elements.number.disabled = false;
+            elements.loaders.disabled = false;
 
-            updateRouteTimerButtons();
+            if (elements.areaSelect) {
+                elements.areaSelect.disabled = false;
+                elements.areaSelect.value = "Frozen";
+            }
+
+            updateRouteTimerButtons(area);
 
             document.getElementById("filterDate").value = record.date;
 
@@ -1990,8 +2089,8 @@ function finishRouteTimer() {
         .catch(error => {
             console.error("Error saving route loading record:", error);
 
-            document.getElementById("finishRouteButton").disabled = false;
-            document.getElementById("timerStatus").textContent = "Save failed - route still active";
+            elements.finish.disabled = false;
+            elements.status.textContent = "Save failed - route still active";
 
             alert("Could not save the route record. Your timer has been kept. Please try again.");
         });
@@ -2008,63 +2107,147 @@ function formatDuration(milliseconds) {
         String(seconds).padStart(2, "0");
 }
 
-function updateRouteTimerDisplay() {
-    if (!activeRouteTimer) return;
+function updateRouteTimerDisplay(area) {
+    if (!area) {
+        ["Frozen", "Ambient"].forEach(updateRouteTimerDisplay);
+        return;
+    }
 
-    const elapsed = Date.now() - activeRouteTimer.startedAt;
+    const activeTimer = activeRouteTimer[area];
 
-    document.getElementById("timerDisplay").textContent =
-        formatDuration(elapsed);
+    if (!activeTimer) return;
 
-    document.getElementById("timerStatus").textContent =
-        "LOADING IN PROGRESS";
+    const elements = getRouteTimerElements(area);
+    const elapsed = Date.now() - activeTimer.startedAt;
 
-    document.getElementById("activeRouteDetails").textContent =
-        activeRouteTimer.area + " | Route " +
-        activeRouteTimer.routeNumber + " | " +
-        activeRouteTimer.loaders + " loader(s) | Started " +
-        formatClock(activeRouteTimer.startedAt);
+    elements.display.textContent = formatDuration(elapsed);
+    elements.status.textContent = "LOADING IN PROGRESS";
+
+    elements.details.textContent =
+        area + " | Route " + activeTimer.routeNumber +
+        " | " + activeTimer.loaders + " loader(s) | Started " +
+        formatClock(activeTimer.startedAt);
 }
 
-function updateRouteTimerButtons() {
-    const running = Boolean(activeRouteTimer);
+function updateRouteTimerButtons(area) {
+    if (!area) {
+        const hasSeparatePanels =
+            document.getElementById("frozenRouteDate") ||
+            document.getElementById("ambientRouteDate");
 
-    document.getElementById("startRouteButton").classList.toggle(
-        "hidden", running
-    );
+        if (hasSeparatePanels) {
+            ["Frozen", "Ambient"].forEach(updateRouteTimerButtons);
+            return;
+        }
 
-    document.getElementById("finishRouteButton").classList.toggle(
-        "hidden", !running
-    );
-}
+        const runningArea = activeRouteTimer.Frozen
+            ? "Frozen"
+            : activeRouteTimer.Ambient
+                ? "Ambient"
+                : null;
 
-// RESTORE TIMER AFTER REOPENING APP
+        const elements = getRouteTimerElements(
+            runningArea || "Frozen"
+        );
 
-function restoreRouteTimer() {
-    if (activeRouteTimer) {
-        document.getElementById("routeNumber").value =
-            activeRouteTimer.routeNumber;
-        document.getElementById("routeLoaders").value =
-            activeRouteTimer.loaders;
-        document.getElementById("routeArea").value =
-            activeRouteTimer.area;
-        document.getElementById("routeDate").value =
-            activeRouteTimer.date;
+        const running = !!runningArea;
 
-        document.getElementById("routeNumber").disabled = true;
-        document.getElementById("routeLoaders").disabled = true;
-        document.getElementById("routeArea").disabled = true;
-        document.getElementById("routeDate").disabled = true;
+        elements.start.classList.toggle("hidden", running);
+        elements.finish.classList.toggle("hidden", !running);
+        elements.finish.disabled = false;
 
-        updateRouteTimerDisplay();
-        updateRouteTimerButtons();
+        if (!running && elements.details) {
+            elements.details.textContent = "No route currently being timed.";
+        }
 
-        if (timerInterval) clearInterval(timerInterval);
-        timerInterval = setInterval(updateRouteTimerDisplay, 1000);
-    } else {
-        updateRouteTimerButtons();
+        return;
+    }
+
+    const elements = getRouteTimerElements(area);
+    const running = !!activeRouteTimer[area];
+
+    elements.start.classList.toggle("hidden", running);
+    elements.finish.classList.toggle("hidden", !running);
+    elements.finish.disabled = false;
+
+    if (!running && elements.details) {
+        elements.details.textContent = "No route currently being timed.";
     }
 }
+
+// RESTORE TIMERS AFTER REOPENING APP
+
+function restoreRouteTimer() {
+    const hasSeparatePanels =
+        document.getElementById("frozenRouteDate") ||
+        document.getElementById("ambientRouteDate");
+
+    if (!hasSeparatePanels) {
+        const area = activeRouteTimer.Frozen
+            ? "Frozen"
+            : activeRouteTimer.Ambient
+                ? "Ambient"
+                : null;
+
+        if (!area) {
+            updateRouteTimerButtons();
+            return;
+        }
+
+        const activeTimer = activeRouteTimer[area];
+        const elements = getRouteTimerElements(area);
+
+        elements.date.value = activeTimer.date;
+        elements.number.value = activeTimer.routeNumber;
+        elements.loaders.value = activeTimer.loaders;
+
+        if (elements.areaSelect) {
+            elements.areaSelect.value = area;
+            elements.areaSelect.disabled = true;
+        }
+
+        elements.date.disabled = true;
+        elements.number.disabled = true;
+        elements.loaders.disabled = true;
+
+        updateRouteTimerDisplay(area);
+        updateRouteTimerButtons();
+
+        timerInterval[area] = setInterval(function () {
+            updateRouteTimerDisplay(area);
+        }, 1000);
+
+        return;
+    }
+
+    ["Frozen", "Ambient"].forEach(function (area) {
+        const activeTimer = activeRouteTimer[area];
+
+        if (!activeTimer) {
+            updateRouteTimerButtons(area);
+            return;
+        }
+
+        const elements = getRouteTimerElements(area);
+
+        elements.date.value = activeTimer.date;
+        elements.number.value = activeTimer.routeNumber;
+        elements.loaders.value = activeTimer.loaders;
+
+        elements.date.disabled = true;
+        elements.number.disabled = true;
+        elements.loaders.disabled = true;
+
+        updateRouteTimerDisplay(area);
+        updateRouteTimerButtons(area);
+
+        timerInterval[area] = setInterval(function () {
+            updateRouteTimerDisplay(area);
+        }, 1000);
+    });
+}
+
+
 
 // REPORT DATE FILTER
 
