@@ -2749,7 +2749,57 @@ function renderRouteLoading() {
         </tr>`;
     }).join("");
 }
+function editRouteTotals(id) {
+    const e = routeLoadingEntries.find(x => String(x.id) === String(id));
+    if (!e) {
+        alert("Route record not found.");
+        return;
+    }
 
+    const weight = prompt(
+        "Enter total route weight in kg:",
+        e.totalWeightKg ?? ""
+    );
+    if (weight === null) return;
+
+    const units = prompt(
+        "Enter total route units:",
+        e.totalUnits ?? ""
+    );
+    if (units === null) return;
+
+    const totalWeightKg = Number(weight);
+    const totalUnits = Number(units);
+
+    if (
+        weight.trim() === "" ||
+        !Number.isFinite(totalWeightKg) ||
+        totalWeightKg <= 0 ||
+        units.trim() === "" ||
+        !Number.isInteger(totalUnits) ||
+        totalUnits <= 0
+    ) {
+        alert("Please enter a valid weight and whole number of units.");
+        return;
+    }
+
+    db.collection("routeLoadingEntries")
+        .doc(String(id))
+        .update({
+            totalWeightKg: totalWeightKg,
+            totalUnits: totalUnits
+        })
+        .then(() => {
+            e.totalWeightKg = totalWeightKg;
+            e.totalUnits = totalUnits;
+            renderRouteLoading();
+            alert("Route totals saved.");
+        })
+        .catch(error => {
+            console.error("Route totals save error:", error);
+            alert("Could not save route totals: " + error.message);
+        });
+}
 // EDIT RECORDS - ADMIN ONLY
 
 function editEntry(id) {
