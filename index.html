@@ -2651,8 +2651,7 @@ function editEntry(id) {
         .update(e)
         .then(() => {
             alert("Picker record updated.");
-        })
-        .catch(error => {
+                }, error => {
             console.error("Picker update error:", error);
             alert("Could not update picker record: " + error.message);
         });
