@@ -3039,17 +3039,10 @@ function lockAdmin() {
 }
 
 // AUTHENTICATION LISTENER
-// AUTHENTICATION LISTENER
-document.getElementById("loginMessage").textContent =
-    "REACHED AUTH LISTENER REGISTRATION";
 
 auth.onAuthStateChanged(user => {
-  document.getElementById("loginMessage").textContent =
-    "AUTH LISTENER IS RUNNING";
     currentUser = user;
-  console.log("AUTH STATE CHANGED:", user);
-  document.getElementById("loginMessage").textContent =
-    "Authentication listener reached.";
+    console.log("AUTH STATE CHANGED:", user);
 
     if (pickerUnsubscribe) {
         pickerUnsubscribe();
@@ -3065,6 +3058,10 @@ auth.onAuthStateChanged(user => {
         routeLoadingUnsubscribe();
         routeLoadingUnsubscribe = null;
     }
+  if (activeRouteTimerUnsubscribe) {
+    activeRouteTimerUnsubscribe();
+    activeRouteTimerUnsubscribe = null;
+  }
 
     if (vanDetailsUnsubscribe) {
         vanDetailsUnsubscribe();
