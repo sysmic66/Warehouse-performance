@@ -1871,14 +1871,30 @@ function todayString() {
     return new Date(today.getTime() - offset * 60000)
         .toISOString().split("T")[0];
 }
+    function shiftDateString() {
+    const shiftDate = new Date();
 
-document.getElementById("entryDate").value = todayString();
-document.getElementById("filterDate").value = todayString();
-document.getElementById("loadingDate").value = todayString();
+    if (shiftDate.getHours() < 8) {
+        shiftDate.setDate(shiftDate.getDate() - 1);
+    }
+
+    const offset = shiftDate.getTimezoneOffset();
+
+    return new Date(shiftDate.getTime() - offset * 60000)
+        .toISOString().split("T")[0];
+    }
+
+document.getElementById("entryDate").value = shiftDateString();
+document.getElementById("filterDate").value = shiftDateString();
+document.getElementById("loadingDate").value = shiftDateString();
+    document.getElementById("frozenRouteDate").value = shiftDateString();
+document.getElementById("ambientRouteDate").value = shiftDateString();
+    document.getElementById("forecastDate").value = shiftDateString();
+document.getElementById("historyDate").value = shiftDateString();
 const routeDateInput = document.getElementById("routeDate");
-if (routeDateInput) routeDateInput.value = todayString();
+if (routeDateInput) routeDateInput.value = shiftDateString();
 const vanDetailsDateInput = document.getElementById("vanDetailsDate");
-if (vanDetailsDateInput) vanDetailsDateInput.value = todayString();
+if (vanDetailsDateInput) vanDetailsDateInput.value = shiftDateString();
 
 function escapeHTML(value) {
     return String(value).replace(/[&<>"']/g, function(character) {
