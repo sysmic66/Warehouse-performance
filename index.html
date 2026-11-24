@@ -231,55 +231,60 @@ Sign Out
 <button onclick="addPicker()">Add Picker Record</button>
 </div>
 
-
 <div class="section">
-    <h2>Individual Route Loading Timer</h2>
-
-    <p class="small">
-        Start a separate timer for every van route.
-        Freezer and Ambient routes can run simultaneously.
-        All active timers synchronise between devices.
-    </p>
+    <h2>Freezer Site Loading Timer</h2>
 
     <label>Loading Date</label>
-    <input type="date" id="routeDate">
-
-    <label>Loading Area</label>
-    <select id="routeArea">
-        <option value="Frozen">Frozen</option>
-        <option value="Ambient">Ambient</option>
-    </select>
+    <input type="date" id="frozenRouteDate">
 
     <label>Three-Digit Route Number</label>
-    <input type="number" id="routeNumber"
-        placeholder="e.g. 125" inputmode="numeric"
-        min="100" max="999" step="1">
+    <input type="number" id="frozenRouteNumber"
+        placeholder="e.g. 125" min="100" max="999">
 
     <label>Number of Loaders</label>
-    <input type="number" id="routeLoaders"
-        placeholder="e.g. 3" min="1" step="1">
+    <input type="number" id="frozenRouteLoaders"
+        placeholder="e.g. 3" min="1">
 
     <div class="timer-box">
-        <div class="timer-status" id="timerStatus">
-            Ready to start
-        </div>
+        <div class="timer-status" id="frozenTimerStatus">Ready to start</div>
+        <div class="timer-display" id="frozenTimerDisplay">00:00:00</div>
 
-        <button class="success" id="startRouteButton"
-            onclick="startRouteTimer()">
-            START LOADING
-        </button>
+        <button class="success" id="startFrozenRouteButton"
+            onclick="startRouteTimer('Frozen')">START FREEZER LOADING</button>
+
+        <button class="danger hidden" id="finishFrozenRouteButton"
+            onclick="finishRouteTimer('Frozen')">FINISH FREEZER LOADING</button>
     </div>
 
-    <h3>Active Route Timers</h3>
+    <p class="small" id="frozenActiveRouteDetails">No freezer route currently being timed.</p>
+</div>
 
-    <div id="activeRouteTimersList">
-        <p class="small">No active routes currently running.</p>
+<div class="section">
+    <h2>Ambient Site Loading Timer</h2>
+
+    <label>Loading Date</label>
+    <input type="date" id="ambientRouteDate">
+
+    <label>Three-Digit Route Number</label>
+    <input type="number" id="ambientRouteNumber"
+        placeholder="e.g. 125" min="100" max="999">
+
+    <label>Number of Loaders</label>
+    <input type="number" id="ambientRouteLoaders"
+        placeholder="e.g. 3" min="1">
+
+    <div class="timer-box">
+        <div class="timer-status" id="ambientTimerStatus">Ready to start</div>
+        <div class="timer-display" id="ambientTimerDisplay">00:00:00</div>
+
+        <button class="success" id="startAmbientRouteButton"
+            onclick="startRouteTimer('Ambient')">START AMBIENT LOADING</button>
+
+        <button class="danger hidden" id="finishAmbientRouteButton"
+            onclick="finishRouteTimer('Ambient')">FINISH AMBIENT LOADING</button>
     </div>
 
-    <p class="small">
-        Active timers continue accurately if the app is closed
-        or the device is restarted.
-    </p>
+    <p class="small" id="ambientActiveRouteDetails">No ambient route currently being timed.</p>
 </div>
 
 <div class="section">
