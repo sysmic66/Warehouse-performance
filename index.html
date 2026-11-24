@@ -2112,11 +2112,11 @@ function finishRouteTimer(area) {
 
             document.getElementById("filterDate").value = record.date;
 
-            renderEntries();
+                        renderEntries();
 
-                    }, error => {
-        })
-        .catch(error => {
+            alert("Route loading record saved successfully.");
+
+        }, error => {
             console.error("Error saving route loading record:", error);
 
             elements.finish.disabled = false;
