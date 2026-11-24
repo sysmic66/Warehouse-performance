@@ -2796,6 +2796,10 @@ function lockAdmin() {
 }
 
 // AUTHENTICATION LISTENER
+// AUTHENTICATION LISTENER
+document.getElementById("loginMessage").textContent =
+    "REACHED AUTH LISTENER REGISTRATION";
+
 auth.onAuthStateChanged(user => {
   document.getElementById("loginMessage").textContent =
     "AUTH LISTENER IS RUNNING";
