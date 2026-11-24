@@ -2731,13 +2731,20 @@ function renderRouteLoading() {
                </td>`
             : "";
 
+                const totalsAction = hasFrozen && hasAmbient
+            ? `<button class="edit-button" onclick="editRouteTotals('${String(e.id)}')">${e.totalWeightKg != null ? "Update Totals" : "Add Totals"}</button>`
+            : "Available when both sites complete";
+
         return `
         <tr>
             <td>${escapeHTML(e.date)}</td>
             <td>${escapeHTML(e.routeNumber)}</td>
             <td>${hasFrozen ? frozenMinutes.toFixed(1) + " min" : "Pending"}</td>
             <td>${hasAmbient ? ambientMinutes.toFixed(1) + " min" : "Pending"}</td>
+            <td>${e.totalWeightKg != null ? Number(e.totalWeightKg).toLocaleString() : "-"}</td>
+            <td>${e.totalUnits != null ? Number(e.totalUnits).toLocaleString() : "-"}</td>
             <td>${status}</td>
+            <td>${totalsAction}</td>
             ${deleteCell}
         </tr>`;
     }).join("");
