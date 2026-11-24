@@ -2767,10 +2767,11 @@ function loginUser() {
 
     try {
         auth.signInWithEmailAndPassword(email, password)
-            .then(() => {
-                clearTimeout(loginTimeout);
-                message.textContent = "Sign-in successful. Loading...";
-            })
+            .then((credential) => {
+    clearTimeout(loginTimeout);
+    message.textContent =
+        "LOGIN OK. User ID: " + credential.user.uid;
+})
             .catch(error => {
                 clearTimeout(loginTimeout);
                 message.textContent =
