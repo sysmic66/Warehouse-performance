@@ -3257,7 +3257,8 @@ auth.onAuthStateChanged(user => {
         adminUnlocked = user.uid === ADMIN_UID;
 
         loginScreen.style.display = "none";
-        mainApp.style.display = "block";
+mainApp.style.display = "block";
+showAppTab("dashboard");
 
         if (adminUnlocked) {
             adminArea.classList.remove("hidden");
