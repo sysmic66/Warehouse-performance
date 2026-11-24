@@ -277,57 +277,53 @@ The timer continues accurately if you close and reopen the app.
 </div>
 
 <div class="section">
-<h2>Van Weight & Units</h2>
+    <h2>Individual Route Loading Timer</h2>
 
-<p class="small">
-Enter the figures from the warehouse computer at the end of the shift. This does not affect the loading timer.
-</p>
+    <p class="small">
+        Start a separate timer for every van route.
+        Freezer and Ambient routes can run simultaneously.
+        All active timers synchronise between devices.
+    </p>
 
-<label>Shift Date</label>
-<input type="date" id="vanDetailsDate">
+    <label>Loading Date</label>
+    <input type="date" id="routeDate">
 
-<label>Loading Area</label>
-<select id="vanDetailsArea">
-<option value="Frozen">Frozen</option>
-<option value="Ambient">Ambient</option>
-</select>
+    <label>Loading Area</label>
+    <select id="routeArea">
+        <option value="Frozen">Frozen</option>
+        <option value="Ambient">Ambient</option>
+    </select>
 
-<label>Three-Digit Route Number</label>
-<input type="number" id="vanDetailsRoute"
-placeholder="e.g. 125" min="100" max="999" step="1">
+    <label>Three-Digit Route Number</label>
+    <input type="number" id="routeNumber"
+        placeholder="e.g. 125" inputmode="numeric"
+        min="100" max="999" step="1">
 
-<label>Total Weight (kg)</label>
-<input type="number" id="vanDetailsWeight"
-placeholder="e.g. 2450" min="1" step="0.01">
+    <label>Number of Loaders</label>
+    <input type="number" id="routeLoaders"
+        placeholder="e.g. 3" min="1" step="1">
 
-<label>Total Units</label>
-<input type="number" id="vanDetailsUnits"
-placeholder="e.g. 280" min="1" step="1">
+    <div class="timer-box">
+        <div class="timer-status" id="timerStatus">
+            Ready to start
+        </div>
 
-<button class="success" onclick="addVanDetails()">
-Save Van Details
-</button>
+        <button class="success" id="startRouteButton"
+            onclick="startRouteTimer()">
+            START LOADING
+        </button>
+    </div>
 
-<h3>Saved Van Details</h3>
+    <h3>Active Route Timers</h3>
 
-<div class="table-wrap">
-<table>
-<thead>
-<tr>
-<th>Date</th>
-<th>Area</th>
-<th>Loaders</th>
-<th>Vans</th>
-<th>Minutes</th>
-<th>Mins/Van</th>
-<th>Vans/Hour</th>
-<th id="loadingDeleteHeading" class="hidden">Actions</th>
-</tr>
-</thead>
-<tbody id="vanDetailsResults"></tbody>
-</table>
-</div>
+    <div id="activeRouteTimersList">
+        <p class="small">No active routes currently running.</p>
+    </div>
 
+    <p class="small">
+        Active timers continue accurately if the app is closed
+        or the device is restarted.
+    </p>
 </div>
 
 <div class="section">
