@@ -1682,12 +1682,14 @@ function saveActiveRouteTimer() {
             });
 
         }, error => {
-            console.error("Live timer sync error:", error);
-        });
+    console.error("Live timer sync error:", error);
+    alert("LIVE TIMER FIREBASE ERROR: " + error.message);
+});
 
     }).catch(error => {
-        console.error("Could not start live timer sync:", error);
-    });
+    console.error("Could not start live timer sync:", error);
+    alert("LIVE TIMER START ERROR: " + error.message);
+});
     }
 
 // STAFF MANAGEMENT - FIRESTORE
