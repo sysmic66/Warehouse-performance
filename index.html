@@ -1787,7 +1787,8 @@ function todayString() {
 document.getElementById("entryDate").value = todayString();
 document.getElementById("filterDate").value = todayString();
 document.getElementById("loadingDate").value = todayString();
-document.getElementById("routeDate").value = todayString();
+const routeDateInput = document.getElementById("routeDate");
+if (routeDateInput) routeDateInput.value = todayString();
 const vanDetailsDateInput = document.getElementById("vanDetailsDate");
 if (vanDetailsDateInput) vanDetailsDateInput.value = todayString();
 
