@@ -934,6 +934,79 @@ async function startShiftHistorySync() {
                     ...doc.data(),
                     id: doc.id
                 }));
+              console.log("SHIFT HISTORY RECORDS:", shiftHistoryEntries);
+              
+function renderShiftHistory() {
+
+    const tbody = document.getElementById("shiftHistoryResults");
+    const actionsHeading = document.getElementById("historyActionsHeading");
+
+    if (!tbody) return;
+
+    if (actionsHeading) {
+        actionsHeading.style.display = adminUnlocked ? "" : "none";
+    }
+
+    const sortedHistory = [...shiftHistoryEntries].sort((a, b) =>
+        String(b.date || "").localeCompare(String(a.date || ""))
+    );
+
+    tbody.innerHTML = "";
+
+    if (sortedHistory.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="${adminUnlocked ? 9 : 8}">
+                    No shift history recorded yet.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    sortedHistory.forEach(entry => {
+
+        const row = document.createElement("tr");
+
+        const values = [
+            entry.date || "",
+            entry.routes ?? "",
+            entry.weight ?? "",
+            entry.plannedStaff ?? "",
+            entry.actualStaff ?? "",
+            `${entry.breakStart || ""} (${entry.breakDuration || ""} mins)`,
+            entry.plannedFinish || "",
+            entry.actualFinish || ""
+        ];
+
+        values.forEach(value => {
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+
+        if (adminUnlocked) {
+
+            const actionsCell = document.createElement("td");
+
+            const editButton = document.createElement("button");
+            editButton.textContent = "Edit";
+            editButton.type = "button";
+            editButton.onclick = () => editShiftHistory(entry.id);
+
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.type = "button";
+            deleteButton.onclick = () => deleteShiftHistory(entry.id);
+
+            actionsCell.appendChild(editButton);
+            actionsCell.appendChild(deleteButton);
+            row.appendChild(actionsCell);
+        }
+
+        tbody.appendChild(row);
+    });
+}
 
                 localStorage.setItem(
                     "shiftHistoryEntries",
