@@ -2628,7 +2628,6 @@ function renderLoading() {
     const sorted = [...filtered].sort((a, b) =>
         b.date.localeCompare(a.date)
     );
-  alert("Picker records sorted");
 
     document.getElementById("loadingDeleteHeading").classList.toggle(
         "hidden", !adminUnlocked
@@ -3288,7 +3287,6 @@ auth.onAuthStateChanged(user => {
     const adminArea = document.getElementById("adminUnlockedArea");
 
     if (user) {
-      alert("LOGIN STARTED");
         adminUnlocked = user.uid === ADMIN_UID;
 
         loginScreen.style.display = "none";
@@ -3304,26 +3302,15 @@ showAppTab("dashboard");
         }
 
         startStaffListener();
-      alert("Staff listener passed");
       startPickerSync();
-      alert("Loading sync passed");
-      alert("Picker sync passed");
       startLoadingSync();
-      alert("Route loading sync passed");
       startRouteLoadingSync();
       startActiveRouteTimerSync();
-      alert("Active timer sync passed");
 startVanDetailsSync();
-      alert("Van details sync passed");
         renderEntries();
-      alert("Entries rendering passed");
         renderLoading();
-      alert("Loading rendering passed");
         renderRouteLoading();
-      alert("Render entries completed");
 renderVanDetails();
-
-    alert("Reached Shift History startup");
       startShiftHistorySync();
     } else {
         adminUnlocked = false;
@@ -3410,7 +3397,6 @@ forecast: [
 
 function renderEntries() {
     const filtered = getPeriodEntries();
-  alert("Period entries loaded: " + filtered.length);
 
     const totalRoutes = filtered.reduce((sum, e) => sum + Number(e.routes), 0);
     const totalUnits = filtered.reduce((sum, e) => sum + Number(e.units), 0);
@@ -3425,7 +3411,6 @@ function renderEntries() {
     document.getElementById("overallRate").textContent = overallRate.toFixed(1);
 
     const staff = groupPickerEntries(filtered);
-  alert("Picker grouping passed: " + staff.length);
 const topFreezer = staff
     .filter(p => p.building === "Freezer")
     .sort((a, b) => b.rate - a.rate)[0];
@@ -3446,7 +3431,6 @@ document.getElementById("topAmbientPicker").textContent =
 document.getElementById("topChillerPicker").textContent =
     topChiller ? topChiller.name + " (" + topChiller.rate.toFixed(1) + ")" : "-";
     const freezerAverage = getStoreAverage(filtered, "Freezer");
-  alert("Freezer average passed");
     const ambientAverage = getStoreAverage(filtered, "Ambient");
     const chillerAverage = getStoreAverage(filtered, "Chiller");
 
@@ -3462,7 +3446,6 @@ document.getElementById("topChillerPicker").textContent =
 
     buildLeaderboard(staff.filter(p => p.building === "Chiller"),
         "chillerLeaderboard", chillerAverage);
-  alert("All leaderboards passed");
 
     const sorted = [...filtered].sort((a, b) =>
         b.date.localeCompare(a.date)
@@ -3471,9 +3454,8 @@ document.getElementById("topChillerPicker").textContent =
     document.getElementById("deleteHeading").classList.toggle(
         "hidden", !adminUnlocked
     );
-alert("Delete heading passed");
     const results = document.getElementById("resultsTable");
-  alert("Results table found: " + !!results);
+
 
     if (sorted.length === 0) {
         results.innerHTML =
