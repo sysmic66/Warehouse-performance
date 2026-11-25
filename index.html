@@ -3421,6 +3421,7 @@ function renderEntries() {
     document.getElementById("overallRate").textContent = overallRate.toFixed(1);
 
     const staff = groupPickerEntries(filtered);
+  alert("Picker grouping passed: " + staff.length);
 const topFreezer = staff
     .filter(p => p.building === "Freezer")
     .sort((a, b) => b.rate - a.rate)[0];
