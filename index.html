@@ -937,17 +937,26 @@ async function startShiftHistorySync() {
               console.log("SHIFT HISTORY RECORDS:", shiftHistoryEntries);
               
 function renderShiftHistory() {
-
     const tbody = document.getElementById("shiftHistoryResults");
-    const actionsHeading = document.getElementById("historyActionsHeading");
+    const actionsHeading = document.getElementById("routeDeleteHeading");
 
     if (!tbody) return;
 
     if (actionsHeading) {
-        actionsHeading.style.display = adminUnlocked ? "" : "none";
+        actionsHeading.classList.toggle("hidden", !adminUnlocked);
     }
 
-    const sortedHistory = [...shiftHistoryEntries].sort((a, b) =>
+    const range = getDateRange();
+
+    let filtered = [...shiftHistoryEntries];
+
+    if (range) {
+        filtered = filtered.filter(e =>
+            e.date >= range.start && e.date <= range.end
+        );
+    }
+
+    const sortedHistory = filtered.sort((a, b) =>
         String(b.date || "").localeCompare(String(a.date || ""))
     );
 
@@ -957,7 +966,7 @@ function renderShiftHistory() {
         tbody.innerHTML = `
             <tr>
                 <td colspan="${adminUnlocked ? 9 : 8}">
-                    No shift history recorded yet.
+                    No shift history recorded for this period.
                 </td>
             </tr>
         `;
@@ -965,13 +974,12 @@ function renderShiftHistory() {
     }
 
     sortedHistory.forEach(entry => {
-
         const row = document.createElement("tr");
 
         const values = [
             entry.date || "",
             entry.routes ?? "",
-            entry.weight ?? "",
+            Number(entry.weight || 0).toLocaleString(),
             entry.plannedStaff ?? "",
             entry.actualStaff ?? "",
             `${entry.breakStart || ""} (${entry.breakDuration || ""} mins)`,
@@ -986,17 +994,14 @@ function renderShiftHistory() {
         });
 
         if (adminUnlocked) {
-
             const actionsCell = document.createElement("td");
 
             const editButton = document.createElement("button");
             editButton.textContent = "Edit";
-            editButton.type = "button";
             editButton.onclick = () => editShiftHistory(entry.id);
 
             const deleteButton = document.createElement("button");
             deleteButton.textContent = "Delete";
-            deleteButton.type = "button";
             deleteButton.onclick = () => deleteShiftHistory(entry.id);
 
             actionsCell.appendChild(editButton);
@@ -1007,11 +1012,6 @@ function renderShiftHistory() {
         tbody.appendChild(row);
     });
 }
-
-                localStorage.setItem(
-                    "shiftHistoryEntries",
-                    JSON.stringify(shiftHistoryEntries)
-                );
 
                 renderShiftHistory();
 
