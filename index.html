@@ -548,14 +548,14 @@ Sign Out
 <h2>Report Period</h2>
 
 <label>Select Report</label>
-<select id="period" onchange="renderEntries()">
+<select id="period" onchange="renderEntries(); renderShiftHistory()">
 <option value="daily">Daily</option>
 <option value="weekly">Weekly</option>
 <option value="monthly">Monthly</option>
 </select>
 
 <label>Select Date</label>
-<input type="date" id="filterDate" onchange="renderEntries()">
+<input type="date" id="filterDate" onchange="renderEntries(); renderShiftHistory()">
 
 <p id="periodDescription"></p>
 </div>
