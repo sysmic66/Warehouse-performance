@@ -3458,6 +3458,7 @@ document.getElementById("topChillerPicker").textContent =
 
     buildLeaderboard(staff.filter(p => p.building === "Chiller"),
         "chillerLeaderboard", chillerAverage);
+  alert("All leaderboards passed");
 
     const sorted = [...filtered].sort((a, b) =>
         b.date.localeCompare(a.date)
