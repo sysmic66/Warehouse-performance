@@ -900,6 +900,10 @@ async function startLoadingSync() {
   // FIRESTORE SHIFT HISTORY SYNC
 
 async function startShiftHistorySync() {
+      const testBody = document.getElementById("shiftHistoryResults");
+    if (testBody) {
+        testBody.innerHTML = '<tr><td colspan="8">Shift History function started.</td></tr>';
+    }
 
     const migrationKey = "shiftHistoryMigratedToFirebase";
 
