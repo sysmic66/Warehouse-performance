@@ -939,7 +939,9 @@ async function startShiftHistorySync() {
                     id: doc.id
                 }));
               console.log("SHIFT HISTORY RECORDS:", shiftHistoryEntries);
-                              renderShiftHistory();
+                              console.log("SHIFT HISTORY COUNT:", shiftHistoryEntries.length);
+alert("Shift History records received: " + shiftHistoryEntries.length);
+renderShiftHistory();
 
             }, error => {
     console.error("Shift History sync error:", error);
