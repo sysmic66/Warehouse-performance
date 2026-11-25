@@ -49,6 +49,15 @@ button {
 button:active { opacity: 0.8; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 .danger { background: #c62828; }
+  .freezer-button {
+    background: #90CAF9;
+    color: #17324D;
+}
+
+.ambient-button {
+    background: #FFCC99;
+    color: #663300;
+}
 .secondary { background: #555; }
 .success { background: #16833b; }
 .edit-button {
@@ -247,7 +256,7 @@ Sign Out
         <div class="timer-status" id="frozenTimerStatus">Ready to start</div>
         <div class="timer-display" id="frozenTimerDisplay">00:00:00</div>
 
-        <button class="success" id="startFrozenRouteButton"
+        <button class="freezer-button" id="startFrozenRouteButton"
             onclick="startRouteTimer('Frozen')">
             START FREEZER LOADING
         </button>
@@ -279,7 +288,7 @@ Sign Out
         <div class="timer-status" id="ambientTimerStatus">Ready to start</div>
         <div class="timer-display" id="ambientTimerDisplay">00:00:00</div>
 
-        <button class="success" id="startAmbientRouteButton"
+        <button class="ambient-button" id="startAmbientRouteButton"
             onclick="startRouteTimer('Ambient')">
             START AMBIENT LOADING
         </button>
