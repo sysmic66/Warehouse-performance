@@ -3286,6 +3286,7 @@ auth.onAuthStateChanged(user => {
     const adminArea = document.getElementById("adminUnlockedArea");
 
     if (user) {
+      alert("LOGIN STARTED");
         adminUnlocked = user.uid === ADMIN_UID;
 
         loginScreen.style.display = "none";
