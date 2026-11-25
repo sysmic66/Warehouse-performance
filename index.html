@@ -996,7 +996,7 @@ function renderShiftHistory() {
     const sortedHistory = filtered.sort((a, b) =>
         String(b.date || "").localeCompare(String(a.date || ""))
     );
-  alert("Picker records sorted");
+  
 
     tbody.innerHTML = "";
 
@@ -2628,6 +2628,7 @@ function renderLoading() {
     const sorted = [...filtered].sort((a, b) =>
         b.date.localeCompare(a.date)
     );
+  alert("Picker records sorted");
 
     document.getElementById("loadingDeleteHeading").classList.toggle(
         "hidden", !adminUnlocked
