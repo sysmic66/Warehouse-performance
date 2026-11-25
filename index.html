@@ -3406,6 +3406,7 @@ forecast: [
 
 function renderEntries() {
     const filtered = getPeriodEntries();
+  alert("Period entries loaded: " + filtered.length);
 
     const totalRoutes = filtered.reduce((sum, e) => sum + Number(e.routes), 0);
     const totalUnits = filtered.reduce((sum, e) => sum + Number(e.units), 0);
