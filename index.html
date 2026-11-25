@@ -935,6 +935,19 @@ async function startShiftHistorySync() {
                     id: doc.id
                 }));
               console.log("SHIFT HISTORY RECORDS:", shiftHistoryEntries);
+                              renderShiftHistory();
+
+            }, error => {
+                console.error("Shift History sync error:", error);
+            });
+
+    } catch (error) {
+
+        console.error("Could not start Shift History sync:", error);
+        alert("Could not load Shift History from Firebase.");
+
+    }
+}
               
 
   // RENDER SHIFT HISTORY
