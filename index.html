@@ -1029,19 +1029,20 @@ function renderShiftHistory() {
   // RENDER SHIFT HISTORY
 
 function renderShiftHistory() {
-
     const tbody = document.getElementById("shiftHistoryResults");
-    const actionsHeading = document.getElementById("historyActionsHeading");
+    const actionsHeading = document.getElementById("routeDeleteHeading");
 
     if (!tbody) return;
 
     if (actionsHeading) {
-        actionsHeading.style.display = adminUnlocked ? "" : "none";
+        actionsHeading.classList.toggle("hidden", !adminUnlocked);
     }
 
-    const sortedHistory = [...shiftHistoryEntries].sort((a, b) =>
-        String(b.date || "").localeCompare(String(a.date || ""))
-    );
+    const filtered = getPeriodRouteLoading();
+
+    const sortedHistory = [...filtered].sort((a, b) => {
+        return String(b.date || "").localeCompare(String(a.date || ""));
+    });
 
     tbody.innerHTML = "";
 
@@ -1049,26 +1050,50 @@ function renderShiftHistory() {
         tbody.innerHTML = `
             <tr>
                 <td colspan="${adminUnlocked ? 9 : 8}">
-                    No shift history recorded yet.
+                    No route records for this period
                 </td>
             </tr>
         `;
         return;
     }
 
-    sortedHistory.forEach(entry => {
+    sortedHistory.forEach(e => {
+        let frozenMinutes = null;
+        let ambientMinutes = null;
+
+        if (e.frozen && e.frozen.minutes != null) {
+            frozenMinutes = Number(e.frozen.minutes);
+        } else if (e.area === "Frozen") {
+            frozenMinutes = Number(e.minutes);
+        }
+
+        if (e.ambient && e.ambient.minutes != null) {
+            ambientMinutes = Number(e.ambient.minutes);
+        } else if (e.area === "Ambient") {
+            ambientMinutes = Number(e.minutes);
+        }
+
+        const hasFrozen = frozenMinutes !== null && Number.isFinite(frozenMinutes);
+        const hasAmbient = ambientMinutes !== null && Number.isFinite(ambientMinutes);
+
+        const status = hasFrozen && hasAmbient
+            ? "Both sites complete"
+            : "Waiting for other site";
+
+        const totalsAction = hasFrozen && hasAmbient
+            ? `<button class="edit-button" onclick="editRouteTotals('${String(e.id)}')">${e.totalWeightKg != null ? "Update Totals" : "Add Totals"}</button>`
+            : "Available when both sites complete";
 
         const row = document.createElement("tr");
 
         const values = [
-            entry.date || "",
-            entry.routes ?? "",
-            entry.weight ?? "",
-            entry.plannedStaff ?? "",
-            entry.actualStaff ?? "",
-            `${entry.breakStart || ""} (${entry.breakDuration || ""} mins)`,
-            entry.plannedFinish || "",
-            entry.actualFinish || ""
+            e.date || "",
+            e.routeNumber || "",
+            hasFrozen ? frozenMinutes.toFixed(1) + " min" : "Pending",
+            hasAmbient ? ambientMinutes.toFixed(1) + " min" : "Pending",
+            e.totalWeightKg != null ? Number(e.totalWeightKg).toLocaleString() : "-",
+            e.totalUnits != null ? Number(e.totalUnits).toLocaleString() : "-",
+            status
         ];
 
         values.forEach(value => {
@@ -1077,19 +1102,22 @@ function renderShiftHistory() {
             row.appendChild(cell);
         });
 
-        if (adminUnlocked) {
+        const totalsCell = document.createElement("td");
+        totalsCell.innerHTML = totalsAction;
+        row.appendChild(totalsCell);
 
+        if (adminUnlocked) {
             const actionsCell = document.createElement("td");
 
             const editButton = document.createElement("button");
+            editButton.className = "edit-button";
             editButton.textContent = "Edit";
-            editButton.type = "button";
-            editButton.onclick = () => editShiftHistory(entry.id);
+            editButton.onclick = () => editRouteLoading(e.id);
 
             const deleteButton = document.createElement("button");
+            deleteButton.className = "danger";
             deleteButton.textContent = "Delete";
-            deleteButton.type = "button";
-            deleteButton.onclick = () => deleteShiftHistory(entry.id);
+            deleteButton.onclick = () => deleteRouteLoading(e.id);
 
             actionsCell.appendChild(editButton);
             actionsCell.appendChild(deleteButton);
