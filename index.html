@@ -3442,6 +3442,7 @@ document.getElementById("topAmbientPicker").textContent =
 document.getElementById("topChillerPicker").textContent =
     topChiller ? topChiller.name + " (" + topChiller.rate.toFixed(1) + ")" : "-";
     const freezerAverage = getStoreAverage(filtered, "Freezer");
+  alert("Freezer average passed");
     const ambientAverage = getStoreAverage(filtered, "Ambient");
     const chillerAverage = getStoreAverage(filtered, "Chiller");
 
