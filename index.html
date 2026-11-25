@@ -928,6 +928,10 @@ async function startShiftHistorySync() {
         }
 
         shiftHistoryUnsubscribe = db.collection("shiftHistory")
+          const historyBody = document.getElementById("shiftHistoryResults");
+if (historyBody) {
+    historyBody.innerHTML = '<tr><td colspan="8">Checking Firebase Shift History...</td></tr>';
+}
             .onSnapshot(snapshot => {
 
                 shiftHistoryEntries = snapshot.docs.map(doc => ({
