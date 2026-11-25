@@ -900,10 +900,45 @@ async function startLoadingSync() {
   // FIRESTORE SHIFT HISTORY SYNC
 
 async function startShiftHistorySync() {
-      const testBody = document.getElementById("shiftHistoryResults");
-    if (testBody) {
-        testBody.innerHTML = '<tr><td colspan="8">Shift History function started.</td></tr>';
+
+    if (shiftHistoryUnsubscribe) {
+        shiftHistoryUnsubscribe();
+        shiftHistoryUnsubscribe = null;
     }
+
+    let firstSnapshot = true;
+
+    shiftHistoryUnsubscribe = db.collection("shiftHistory")
+        .onSnapshot(snapshot => {
+
+            shiftHistoryEntries = snapshot.docs.map(doc => ({
+                ...doc.data(),
+                id: doc.id
+            }));
+
+            if (firstSnapshot) {
+                firstSnapshot = false;
+                alert("Shift History records received: " + shiftHistoryEntries.length);
+            }
+
+            renderShiftHistory();
+
+        }, error => {
+
+            console.error("Shift History sync error:", error);
+
+            const tbody = document.getElementById("shiftHistoryResults");
+
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9">
+                            Firebase error: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            }
+        });
 
     const migrationKey = "shiftHistoryMigratedToFirebase";
 
@@ -927,42 +962,10 @@ async function startShiftHistorySync() {
             localStorage.setItem(migrationKey, "yes");
         }
 
-        if (shiftHistoryUnsubscribe) {
-            shiftHistoryUnsubscribe();
-        }
-
-        shiftHistoryUnsubscribe = db.collection("shiftHistory")
-            .onSnapshot(snapshot => {
-
-                shiftHistoryEntries = snapshot.docs.map(doc => ({
-                    ...doc.data(),
-                    id: doc.id
-                }));
-              console.log("SHIFT HISTORY RECORDS:", shiftHistoryEntries);
-                              console.log("SHIFT HISTORY COUNT:", shiftHistoryEntries.length);
-alert("Shift History records received: " + shiftHistoryEntries.length);
-renderShiftHistory();
-
-            }, error => {
-    console.error("Shift History sync error:", error);
-
-    const tbody = document.getElementById("shiftHistoryResults");
-
-    if (tbody) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8">
-                    Firebase error: ${error.message}
-                </td>
-            </tr>
-        `;
-    }
-});
-
     } catch (error) {
 
-        console.error("Could not start Shift History sync:", error);
-        alert("Could not load Shift History from Firebase.");
+        console.error("Could not migrate old Shift History records:", error);
+        alert("Shift History migration error: " + error.message);
 
     }
 }
