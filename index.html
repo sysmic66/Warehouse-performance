@@ -1038,11 +1038,19 @@ function renderShiftHistory() {
         actionsHeading.classList.toggle("hidden", !adminUnlocked);
     }
 
-    const filtered = getPeriodRouteLoading();
+    const range = getDateRange();
 
-    const sortedHistory = [...filtered].sort((a, b) => {
-        return String(b.date || "").localeCompare(String(a.date || ""));
-    });
+    let filtered = [...shiftHistoryEntries];
+
+    if (range) {
+        filtered = filtered.filter(e =>
+            e.date >= range.start && e.date <= range.end
+        );
+    }
+
+    const sortedHistory = filtered.sort((a, b) =>
+        String(b.date || "").localeCompare(String(a.date || ""))
+    );
 
     tbody.innerHTML = "";
 
@@ -1050,50 +1058,25 @@ function renderShiftHistory() {
         tbody.innerHTML = `
             <tr>
                 <td colspan="${adminUnlocked ? 9 : 8}">
-                    No route records for this period
+                    No shift history recorded for this period.
                 </td>
             </tr>
         `;
         return;
     }
 
-    sortedHistory.forEach(e => {
-        let frozenMinutes = null;
-        let ambientMinutes = null;
-
-        if (e.frozen && e.frozen.minutes != null) {
-            frozenMinutes = Number(e.frozen.minutes);
-        } else if (e.area === "Frozen") {
-            frozenMinutes = Number(e.minutes);
-        }
-
-        if (e.ambient && e.ambient.minutes != null) {
-            ambientMinutes = Number(e.ambient.minutes);
-        } else if (e.area === "Ambient") {
-            ambientMinutes = Number(e.minutes);
-        }
-
-        const hasFrozen = frozenMinutes !== null && Number.isFinite(frozenMinutes);
-        const hasAmbient = ambientMinutes !== null && Number.isFinite(ambientMinutes);
-
-        const status = hasFrozen && hasAmbient
-            ? "Both sites complete"
-            : "Waiting for other site";
-
-        const totalsAction = hasFrozen && hasAmbient
-            ? `<button class="edit-button" onclick="editRouteTotals('${String(e.id)}')">${e.totalWeightKg != null ? "Update Totals" : "Add Totals"}</button>`
-            : "Available when both sites complete";
-
+    sortedHistory.forEach(entry => {
         const row = document.createElement("tr");
 
         const values = [
-            e.date || "",
-            e.routeNumber || "",
-            hasFrozen ? frozenMinutes.toFixed(1) + " min" : "Pending",
-            hasAmbient ? ambientMinutes.toFixed(1) + " min" : "Pending",
-            e.totalWeightKg != null ? Number(e.totalWeightKg).toLocaleString() : "-",
-            e.totalUnits != null ? Number(e.totalUnits).toLocaleString() : "-",
-            status
+            entry.date || "",
+            entry.routes ?? "",
+            Number(entry.weight || 0).toLocaleString(),
+            entry.plannedStaff ?? "",
+            entry.actualStaff ?? "",
+            `${entry.breakStart || ""} (${entry.breakDuration || ""} mins)`,
+            entry.plannedFinish || "",
+            entry.actualFinish || ""
         ];
 
         values.forEach(value => {
@@ -1102,22 +1085,16 @@ function renderShiftHistory() {
             row.appendChild(cell);
         });
 
-        const totalsCell = document.createElement("td");
-        totalsCell.innerHTML = totalsAction;
-        row.appendChild(totalsCell);
-
         if (adminUnlocked) {
             const actionsCell = document.createElement("td");
 
             const editButton = document.createElement("button");
-            editButton.className = "edit-button";
             editButton.textContent = "Edit";
-            editButton.onclick = () => editRouteLoading(e.id);
+            editButton.onclick = () => editShiftHistory(entry.id);
 
             const deleteButton = document.createElement("button");
-            deleteButton.className = "danger";
             deleteButton.textContent = "Delete";
-            deleteButton.onclick = () => deleteRouteLoading(e.id);
+            deleteButton.onclick = () => deleteShiftHistory(entry.id);
 
             actionsCell.appendChild(editButton);
             actionsCell.appendChild(deleteButton);
