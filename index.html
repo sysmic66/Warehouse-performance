@@ -938,8 +938,20 @@ async function startShiftHistorySync() {
                               renderShiftHistory();
 
             }, error => {
-                console.error("Shift History sync error:", error);
-            });
+    console.error("Shift History sync error:", error);
+
+    const tbody = document.getElementById("shiftHistoryResults");
+
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8">
+                    Firebase error: ${error.message}
+                </td>
+            </tr>
+        `;
+    }
+});
 
     } catch (error) {
 
