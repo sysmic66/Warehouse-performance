@@ -167,6 +167,32 @@ th { background: #183153; color: white; }
     background: #2563eb;
     color: white;
 }
+  .freezer-section {
+    background: #245B91;
+    color: white;
+}
+
+.ambient-section {
+    background: #B96820;
+    color: white;
+}
+
+.freezer-section h2,
+.ambient-section h2,
+.freezer-section .small,
+.ambient-section .small {
+    color: white;
+}
+
+.freezer-section .timer-box,
+.ambient-section .timer-box {
+    background: rgba(0,0,0,0.12);
+}
+
+.freezer-section .timer-display,
+.ambient-section .timer-display {
+    color: white;
+}
 </style>
 </head>
 
@@ -243,7 +269,7 @@ Sign Out
 <button onclick="addPicker()">Add Picker Record</button>
 </div>
 
-<div class="section">
+<div class="section freezer-section">
     <h2>Freezer Site Route Loading Timer</h2>
 
     <label>Loading Date</label>
@@ -275,7 +301,7 @@ Sign Out
     </p>
 </div>
 
-<div class="section">
+<div class="section ambient-section">
     <h2>Ambient Site Route Loading Timer</h2>
 
     <label>Loading Date</label>
