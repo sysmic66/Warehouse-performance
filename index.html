@@ -1044,14 +1044,18 @@ function renderShiftHistory() {
         const values = [
             entry.date
     ? (() => {
-        const [year, month, day] = entry.date.split("-").map(Number);
-        const date = new Date(year, month - 1, day);
-        return date.toLocaleDateString("en-GB", {
-            weekday: "long",
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric"
-        });
+        const date = entry.date.toDate
+            ? entry.date.toDate()
+            : new Date(entry.date + (String(entry.date).length === 10 ? "T12:00:00" : ""));
+
+        return isNaN(date.getTime())
+            ? String(entry.date)
+            : date.toLocaleDateString("en-GB", {
+                weekday: "long",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric"
+            });
     })()
     : "",
             entry.routes ?? "",
