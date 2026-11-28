@@ -1002,6 +1002,7 @@ async function startShiftHistorySync() {
 
   // RENDER SHIFT HISTORY
 
+
 function renderShiftHistory() {
     const tbody = document.getElementById("shiftHistoryResults");
     const actionsHeading = document.getElementById("routeDeleteHeading");
@@ -1012,30 +1013,47 @@ function renderShiftHistory() {
         actionsHeading.classList.toggle("hidden", !adminUnlocked);
     }
 
-    const range = null;
-
-    let filtered = [...shiftHistoryEntries];
-
-    if (range) {
-        filtered = filtered.filter(e =>
-            e.date >= range.start && e.date <= range.end
-        );
-    }
-
-    const sortedHistory = filtered.sort((a, b) =>
+    const sortedHistory = [...shiftHistoryEntries].sort((a, b) =>
         String(b.date || "").localeCompare(String(a.date || ""))
     );
-  
-    tbody.innerHTML = `<tr><td colspan="9">Records loaded: ${shiftHistoryEntries.length}</td></tr>`;
+
+    tbody.innerHTML = "";
 
     if (sortedHistory.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="${adminUnlocked ? 9 : 8}">
+                    No shift history recorded.
+                </td>
+            </tr>
+        `;
+        return;
     }
 
     sortedHistory.forEach(entry => {
         const row = document.createElement("tr");
 
+        let displayDate = entry.date || "";
+
+        if (entry.date) {
+            const parts = entry.date.split("-");
+            if (parts.length === 3) {
+                const date = new Date(
+                    Number(parts[0]),
+                    Number(parts[1]) - 1,
+                    Number(parts[2])
+                );
+
+                const day = date.toLocaleDateString("en-GB", {
+                    weekday: "long"
+                });
+
+                displayDate = `${day} ${entry.date}`;
+            }
+        }
+
         const values = [
-            entry.date || "",
+            displayDate,
             entry.routes ?? "",
             Number(entry.weight || 0).toLocaleString(),
             entry.plannedStaff ?? "",
@@ -1070,6 +1088,7 @@ function renderShiftHistory() {
         tbody.appendChild(row);
     });
 }
+
   // ADD SHIFT HISTORY
 
 async function addShiftHistory() {
