@@ -1025,7 +1025,7 @@ function renderShiftHistory() {
     );
   
 
-    tbody.innerHTML = "";
+    tbody.innerHTML = `<tr><td colspan="9">Records loaded: ${shiftHistoryEntries.length}</td></tr>`;
 
     if (sortedHistory.length === 0) {
         tbody.innerHTML = `
