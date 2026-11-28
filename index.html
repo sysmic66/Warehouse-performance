@@ -1025,20 +1025,10 @@ function renderShiftHistory() {
     const sortedHistory = filtered.sort((a, b) =>
         String(b.date || "").localeCompare(String(a.date || ""))
     );
-  tbody.innerHTML = `<tr><td colspan="9">Records loaded: ${shiftHistoryEntries.length}</td></tr>`;
-return;
-
+  
     tbody.innerHTML = `<tr><td colspan="9">Records loaded: ${shiftHistoryEntries.length}</td></tr>`;
 
     if (sortedHistory.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="${adminUnlocked ? 9 : 8}">
-                    No shift history recorded for this period.
-                </td>
-            </tr>
-        `;
-        return;
     }
 
     sortedHistory.forEach(entry => {
