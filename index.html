@@ -938,7 +938,7 @@ async function startShiftHistorySync() {
 
     shiftHistoryUnsubscribe = db.collection("shiftHistory")
         .onSnapshot(snapshot => {
-console.log("SHIFT HISTORY RECORDS:", snapshot.size);
+alert("Shift History connected. Records found: " + snapshot.size);
             shiftHistoryEntries = snapshot.docs.map(doc => ({
                 ...doc.data(),
                 id: doc.id
