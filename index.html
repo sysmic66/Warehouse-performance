@@ -1042,22 +1042,7 @@ function renderShiftHistory() {
         const row = document.createElement("tr");
 
         const values = [
-            entry.date
-    ? (() => {
-        const date = entry.date.toDate
-            ? entry.date.toDate()
-            : new Date(entry.date + (String(entry.date).length === 10 ? "T12:00:00" : ""));
-
-        return isNaN(date.getTime())
-            ? String(entry.date)
-            : date.toLocaleDateString("en-GB", {
-                weekday: "long",
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric"
-            });
-    })()
-    : "",
+            entry.date || "",
             entry.routes ?? "",
             Number(entry.weight || 0).toLocaleString(),
             entry.plannedStaff ?? "",
