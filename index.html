@@ -506,6 +506,22 @@ Sign Out
     </div>
 </div>
   
+<div class="section">
+<h2>Report Period</h2>
+
+<label>Select Report</label>
+<select id="period" onchange="renderEntries(); renderShiftHistory()">
+<option value="daily">Daily</option>
+<option value="weekly">Weekly</option>
+<option value="monthly">Monthly</option>
+</select>
+
+<label>Select Date</label>
+<input type="date" id="filterDate" onchange="renderEntries(); renderShiftHistory()">
+
+<p id="periodDescription"></p>
+</div>
+
 <div class="section hidden">
     <h2>Shift History</h2>
 
@@ -572,22 +588,6 @@ Sign Out
     </div>
 </div>
 
-
-<div class="section">
-<h2>Report Period</h2>
-
-<label>Select Report</label>
-<select id="period" onchange="renderEntries(); renderShiftHistory()">
-<option value="daily">Daily</option>
-<option value="weekly">Weekly</option>
-<option value="monthly">Monthly</option>
-</select>
-
-<label>Select Date</label>
-<input type="date" id="filterDate" onchange="renderEntries(); renderShiftHistory()">
-
-<p id="periodDescription"></p>
-</div>
 
 <div class="section">
 <h2>Overall Picking Dashboard</h2>
@@ -928,7 +928,6 @@ async function startLoadingSync() {
   // FIRESTORE SHIFT HISTORY SYNC
 
 async function startShiftHistorySync() {
-  alert("START SHIFT HISTORY FUNCTION");
 
     if (shiftHistoryUnsubscribe) {
         shiftHistoryUnsubscribe();
@@ -939,7 +938,6 @@ async function startShiftHistorySync() {
 
     shiftHistoryUnsubscribe = db.collection("shiftHistory")
         .onSnapshot(snapshot => {
-alert("Shift History connected. Records found: " + snapshot.size);
             shiftHistoryEntries = snapshot.docs.map(doc => ({
                 ...doc.data(),
                 id: doc.id
@@ -2030,7 +2028,6 @@ function addPicker() {
             alert("Picker record added successfully.");
 
             renderEntries();
-          alert("RENDER ENTRIES FINISHED");
         })
         .catch(error => {
             console.error("Picker save error:", error);
@@ -3346,7 +3343,6 @@ showAppTab("dashboard");
       startRouteLoadingSync();
       startActiveRouteTimerSync();
 startVanDetailsSync();
-      alert("AUTHENTICATION OK");
         renderEntries();
         renderLoading();
         renderRouteLoading();
